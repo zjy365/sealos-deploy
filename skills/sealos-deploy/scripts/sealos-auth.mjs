@@ -19,7 +19,8 @@
  */
 
 import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'fs'
-import { homedir } from 'os'
+import { execSync } from 'child_process'
+import { homedir, platform } from 'os'
 import { join } from 'path'
 
 const SEALOS_DIR = join(homedir(), '.sealos')
@@ -155,7 +156,7 @@ async function pollForToken (region, deviceCode, interval, expiresIn) {
  * Step 3: Exchange access token for kubeconfig
  */
 async function exchangeForKubeconfig (region, accessToken) {
-  const res = await fetch(`${region}/api/auth/kubeconfig`, {
+  const res = await fetch(`${region}/api/auth/getDefaultKubeconfig`, {
     method: 'POST',
     headers: {
       Authorization: accessToken,
@@ -205,6 +206,16 @@ async function login (region = DEFAULT_REGION) {
   // Print the authorization prompt to stderr so it's visible to the user
   // while stdout is reserved for JSON output
   process.stderr.write('\n' + authPrompt.message + '\n\nWaiting for authorization...\n')
+
+  // Auto-open browser
+  const url = verificationUriComplete || verificationUri
+  try {
+    const cmd = platform() === 'darwin' ? 'open' : platform() === 'win32' ? 'start' : 'xdg-open'
+    execSync(`${cmd} "${url}"`, { stdio: 'ignore' })
+    process.stderr.write('Browser opened automatically.\n')
+  } catch {
+    process.stderr.write('Could not open browser automatically. Please open the URL manually.\n')
+  }
 
   // Step 2: Poll for token
   const tokenResponse = await pollForToken(region, deviceCode, interval, expiresIn)

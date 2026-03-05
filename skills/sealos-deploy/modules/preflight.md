@@ -206,7 +206,7 @@ done
 
 Step 4 — Exchange token for kubeconfig:
 ```bash
-KC_RESP=$(curl -sf -X POST "$REGION/api/auth/kubeconfig" \
+KC_RESP=$(curl -sf -X POST "$REGION/api/auth/getDefaultKubeconfig" \
   -H "Authorization: $ACCESS_TOKEN" \
   -H "Content-Type: application/json")
 # Server returns { data: { kubeconfig } }
