@@ -1,0 +1,1426 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ShipRepo Product Design V2</title>
+    <style>
+      :root {
+        --background: #f7fafb;
+        --foreground: #1f2933;
+        --card: #fcfefe;
+        --sidebar: #f0f5f6;
+        --muted: #eef3f5;
+        --muted-2: #e4ecef;
+        --line: #d9e4e7;
+        --soft-line: #edf3f5;
+        --text-muted: #657680;
+        --text-faint: #8a9aa3;
+        --primary: #1f9d8a;
+        --primary-2: #dff4ef;
+        --primary-3: #effaf7;
+        --blue: #5d8dac;
+        --green: #89a944;
+        --orange: #bd7441;
+        --red: #b94d38;
+        --violet: #7c6aa4;
+        --shadow: 0 18px 52px rgba(28, 45, 56, 0.1);
+        --shadow-sm: 0 8px 28px rgba(28, 45, 56, 0.08);
+        --radius: 14px;
+        --radius-sm: 10px;
+        --mono: "SFMono-Regular", "Geist Mono", Consolas, monospace;
+        --sans: Inter, Geist, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        --serif: "Source Serif 4", Georgia, serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: #dce5e8;
+        color: var(--foreground);
+        font-family: var(--sans);
+        letter-spacing: 0;
+      }
+
+      .sheet {
+        display: grid;
+        gap: 56px;
+        padding: 56px;
+      }
+
+      .artboard {
+        position: relative;
+        width: 1600px;
+        height: 1000px;
+        overflow: hidden;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0)),
+          var(--background);
+        border: 1px solid rgba(135, 154, 163, 0.32);
+        box-shadow: var(--shadow);
+      }
+
+      .surface {
+        position: absolute;
+        inset: 44px;
+        overflow: hidden;
+        background: rgba(252, 254, 254, 0.9);
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        box-shadow: 0 16px 48px rgba(31, 41, 51, 0.08);
+      }
+
+      .workspace {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        grid-template-columns: 274px 1fr;
+      }
+
+      .sidebar {
+        min-width: 0;
+        background: var(--sidebar);
+        border-right: 1px solid var(--line);
+        padding: 28px 18px 22px;
+      }
+
+      .brand-row,
+      .topbar,
+      .repo-row,
+      .inline,
+      .file-row,
+      .event-row,
+      .pill-row,
+      .metric-row {
+        display: flex;
+        align-items: center;
+      }
+
+      .brand-mark {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        background:
+          linear-gradient(145deg, rgba(31, 157, 138, 0.15), rgba(31, 157, 138, 0)),
+          #ffffff;
+        border: 1px solid rgba(31, 157, 138, 0.28);
+        position: relative;
+      }
+
+      .brand-mark::before,
+      .brand-mark::after {
+        content: "";
+        position: absolute;
+        left: 9px;
+        right: 9px;
+        height: 3px;
+        border-radius: 999px;
+        background: var(--primary);
+      }
+
+      .brand-mark::before {
+        top: 11px;
+      }
+
+      .brand-mark::after {
+        top: 19px;
+        opacity: 0.72;
+      }
+
+      .brand-name {
+        margin-left: 10px;
+        font-size: 19px;
+        font-weight: 650;
+      }
+
+      .sidebar-section {
+        margin-top: 34px;
+      }
+
+      .sidebar-label {
+        margin: 0 0 12px;
+        color: var(--text-faint);
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+
+      .repo-item {
+        padding: 12px;
+        border-radius: 12px;
+        color: var(--text-muted);
+        font-size: 13px;
+      }
+
+      .repo-item.active {
+        background: #ffffff;
+        color: var(--foreground);
+        border: 1px solid var(--line);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .repo-dot,
+      .status-dot {
+        flex: 0 0 auto;
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: var(--primary);
+        margin-right: 8px;
+      }
+
+      .repo-sub {
+        display: block;
+        margin-top: 4px;
+        color: var(--text-faint);
+        font-size: 12px;
+      }
+
+      .main {
+        min-width: 0;
+        background: #fbfdfd;
+      }
+
+      .topbar {
+        height: 78px;
+        justify-content: space-between;
+        padding: 0 34px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .crumb {
+        color: var(--text-muted);
+        font-size: 14px;
+      }
+
+      .crumb strong {
+        color: var(--foreground);
+        font-weight: 640;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 40px;
+        padding: 0 16px;
+        border-radius: 11px;
+        border: 1px solid var(--line);
+        background: #ffffff;
+        color: var(--foreground);
+        font-size: 14px;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      .button.primary {
+        border-color: rgba(31, 157, 138, 0.42);
+        background: var(--primary);
+        color: #f8fffd;
+      }
+
+      .button.ghost {
+        background: transparent;
+      }
+
+      .button.danger {
+        border-color: rgba(185, 77, 56, 0.28);
+        color: var(--red);
+        background: #fff7f5;
+      }
+
+      .content {
+        padding: 34px;
+      }
+
+      .two-col {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 340px;
+        gap: 24px;
+      }
+
+      .panel {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .panel.plain {
+        box-shadow: none;
+      }
+
+      .panel.pad {
+        padding: 24px;
+      }
+
+      .result-panel {
+        min-height: 278px;
+        padding: 30px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        gap: 8px;
+        align-items: center;
+        color: var(--primary);
+        font-size: 12px;
+        font-weight: 750;
+        text-transform: uppercase;
+      }
+
+      .eyebrow.neutral {
+        color: var(--text-muted);
+      }
+
+      .eyebrow.red {
+        color: var(--red);
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        margin-top: 18px;
+        font-size: 54px;
+        line-height: 1.02;
+        letter-spacing: -0.01em;
+        font-weight: 660;
+      }
+
+      h2 {
+        font-size: 30px;
+        line-height: 1.12;
+        font-weight: 650;
+      }
+
+      h3 {
+        font-size: 17px;
+        line-height: 1.25;
+        font-weight: 650;
+      }
+
+      .subcopy {
+        color: var(--text-muted);
+        font-size: 16px;
+        line-height: 1.55;
+      }
+
+      .url-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        margin-top: 28px;
+        padding: 18px 18px 18px 20px;
+        border-radius: 13px;
+        background: var(--primary-3);
+        border: 1px solid rgba(31, 157, 138, 0.24);
+      }
+
+      .mono {
+        font-family: var(--mono);
+      }
+
+      .url {
+        font-family: var(--mono);
+        font-size: 15px;
+        color: #157b6d;
+      }
+
+      .meta {
+        color: var(--text-muted);
+        font-size: 13px;
+      }
+
+      .stepper {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        margin-top: 24px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        overflow: hidden;
+      }
+
+      .step {
+        padding: 14px 12px;
+        border-right: 1px solid var(--soft-line);
+        background: #fff;
+      }
+
+      .step:last-child {
+        border-right: 0;
+      }
+
+      .step b {
+        display: block;
+        font-size: 12px;
+        color: var(--foreground);
+        font-weight: 650;
+      }
+
+      .step span {
+        display: block;
+        margin-top: 5px;
+        color: var(--text-faint);
+        font-size: 11px;
+      }
+
+      .step.done {
+        background: #f7fcfa;
+      }
+
+      .step.current {
+        background: var(--primary-2);
+      }
+
+      .section-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 14px;
+      }
+
+      .stack {
+        display: grid;
+        gap: 14px;
+      }
+
+      .small-card {
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 13px;
+        background: #ffffff;
+      }
+
+      .required-card {
+        border-color: rgba(189, 116, 65, 0.26);
+        background: #fffaf5;
+      }
+
+      .failed-card {
+        border-color: rgba(185, 77, 56, 0.24);
+        background: #fff7f5;
+      }
+
+      .file-row {
+        justify-content: space-between;
+        min-height: 54px;
+        border-top: 1px solid var(--soft-line);
+      }
+
+      .file-row:first-child {
+        border-top: 0;
+      }
+
+      .file-main {
+        display: grid;
+        gap: 4px;
+      }
+
+      .file-name {
+        font-size: 14px;
+        font-weight: 620;
+      }
+
+      .file-note {
+        color: var(--text-muted);
+        font-size: 12px;
+      }
+
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        height: 24px;
+        padding: 0 9px;
+        border-radius: 999px;
+        background: var(--muted);
+        color: var(--text-muted);
+        font-size: 12px;
+        font-weight: 620;
+      }
+
+      .tag.green {
+        background: var(--primary-2);
+        color: #157b6d;
+      }
+
+      .tag.orange {
+        background: #fff0e4;
+        color: var(--orange);
+      }
+
+      .tag.red {
+        background: #ffe8e2;
+        color: var(--red);
+      }
+
+      .tabs {
+        display: flex;
+        gap: 4px;
+        border-bottom: 1px solid var(--line);
+        padding: 0 18px;
+      }
+
+      .tab {
+        padding: 15px 12px;
+        color: var(--text-muted);
+        font-size: 13px;
+        font-weight: 600;
+        border-bottom: 2px solid transparent;
+      }
+
+      .tab.active {
+        color: var(--foreground);
+        border-bottom-color: var(--primary);
+      }
+
+      .event-row {
+        gap: 12px;
+        padding: 13px 18px;
+        border-bottom: 1px solid var(--soft-line);
+      }
+
+      .event-row:last-child {
+        border-bottom: 0;
+      }
+
+      .event-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 9px;
+        background: var(--primary-2);
+        border: 1px solid rgba(31, 157, 138, 0.2);
+      }
+
+      .event-title {
+        font-size: 13px;
+        font-weight: 620;
+      }
+
+      .event-time {
+        margin-left: auto;
+        color: var(--text-faint);
+        font-size: 12px;
+      }
+
+      .composer {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        height: 58px;
+        padding: 0 14px 0 18px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: #ffffff;
+      }
+
+      .composer span {
+        flex: 1;
+        color: var(--text-faint);
+        font-size: 14px;
+      }
+
+      .hero-home {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        grid-template-columns: 0.92fr 1.08fr;
+      }
+
+      .home-left {
+        position: relative;
+        z-index: 2;
+        padding: 72px 64px;
+        background:
+          radial-gradient(circle at 20% 18%, rgba(31, 157, 138, 0.12), transparent 30%),
+          #f7fafb;
+      }
+
+      .home-right {
+        position: relative;
+        z-index: 1;
+        padding: 72px 64px;
+        background: linear-gradient(135deg, #20303a, #263b44 42%, #e8f3f0 42.2%, #f9fbfb 100%);
+      }
+
+      .home-title {
+        margin-top: 118px;
+        max-width: 520px;
+        font-size: 68px;
+        line-height: 0.98;
+        font-weight: 680;
+        letter-spacing: -0.015em;
+      }
+
+      .home-copy {
+        margin-top: 24px;
+        max-width: 530px;
+        color: var(--text-muted);
+        font-size: 18px;
+        line-height: 1.6;
+      }
+
+      .repo-picker {
+        position: absolute;
+        left: 76px;
+        right: 78px;
+        bottom: 72px;
+        z-index: 6;
+        padding: 22px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.92);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(10px);
+      }
+
+      .picker-grid {
+        display: grid;
+        grid-template-columns: 1.05fr 0.7fr 150px;
+        gap: 12px;
+        margin-top: 14px;
+      }
+
+      .field {
+        display: flex;
+        align-items: center;
+        min-height: 52px;
+        padding: 0 15px;
+        border-radius: 12px;
+        background: #fff;
+        border: 1px solid var(--line);
+        color: var(--foreground);
+        font-size: 14px;
+      }
+
+      .artifact-stack {
+        position: absolute;
+        inset: 108px 82px 92px 80px;
+      }
+
+      .artifact-card {
+        position: absolute;
+        border: 1px solid rgba(220, 232, 236, 0.96);
+        border-radius: 18px;
+        background: rgba(252, 254, 254, 0.96);
+        box-shadow: 0 24px 54px rgba(14, 28, 34, 0.18);
+      }
+
+      .artifact-card.large {
+        left: 32px;
+        right: 16px;
+        top: 80px;
+        height: 410px;
+        padding: 24px;
+      }
+
+      .artifact-card.small {
+        left: 0;
+        top: 0;
+        width: 350px;
+        height: 156px;
+        padding: 20px;
+        transform: rotate(-3deg);
+      }
+
+      .artifact-card.float {
+        right: 0;
+        bottom: 0;
+        width: 310px;
+        height: 148px;
+        padding: 18px;
+        transform: rotate(2.5deg);
+      }
+
+      .mini-browser {
+        margin-top: 18px;
+        height: 280px;
+        border-radius: 14px;
+        background:
+          linear-gradient(90deg, rgba(31, 157, 138, 0.12) 1px, transparent 1px),
+          linear-gradient(180deg, rgba(31, 157, 138, 0.12) 1px, transparent 1px),
+          #f3f7f8;
+        background-size: 36px 36px;
+        border: 1px solid var(--line);
+        overflow: hidden;
+        position: relative;
+      }
+
+      .mini-browser::before {
+        content: "";
+        position: absolute;
+        left: 28px;
+        top: 28px;
+        width: 280px;
+        height: 178px;
+        border-radius: 13px;
+        background: #fff;
+        border: 1px solid var(--line);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .mini-browser::after {
+        content: "";
+        position: absolute;
+        right: 34px;
+        bottom: 32px;
+        width: 220px;
+        height: 86px;
+        border-radius: 12px;
+        background: var(--primary-2);
+        border: 1px solid rgba(31, 157, 138, 0.28);
+      }
+
+      .analysis-grid {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 20px;
+        margin-top: 24px;
+      }
+
+      .check-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .check-card {
+        min-height: 86px;
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: #fff;
+      }
+
+      .check-card.warn {
+        border-color: rgba(189, 116, 65, 0.28);
+        background: #fffaf5;
+      }
+
+      .diff-panel {
+        display: grid;
+        grid-template-columns: 280px minmax(0, 1fr);
+        min-height: 280px;
+        overflow: hidden;
+      }
+
+      .diff-files {
+        border-right: 1px solid var(--line);
+        background: #f7fafb;
+        padding: 18px;
+      }
+
+      .diff-code {
+        padding: 18px 22px;
+        background: #fff;
+        font-family: var(--mono);
+        font-size: 13px;
+        line-height: 1.85;
+      }
+
+      .code-plus {
+        color: #157b6d;
+        background: #ecfaf6;
+      }
+
+      .code-minus {
+        color: var(--red);
+        background: #fff0eb;
+      }
+
+      .env-grid {
+        display: grid;
+        gap: 12px;
+        margin-top: 18px;
+      }
+
+      .env-row {
+        display: grid;
+        grid-template-columns: 210px 1fr 116px;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .env-key {
+        font-family: var(--mono);
+        font-size: 13px;
+        color: var(--foreground);
+      }
+
+      .input-mask {
+        height: 40px;
+        border: 1px solid var(--line);
+        background: #fff;
+        border-radius: 10px;
+      }
+
+      .health-visual {
+        height: 178px;
+        border-radius: 14px;
+        background:
+          radial-gradient(circle at 76% 34%, rgba(31, 157, 138, 0.18), transparent 32%),
+          linear-gradient(135deg, #f5fbfa, #ffffff);
+        border: 1px solid var(--line);
+        position: relative;
+      }
+
+      .health-visual::before {
+        content: "";
+        position: absolute;
+        left: 26px;
+        right: 26px;
+        bottom: 32px;
+        height: 8px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--primary) 68%, var(--muted-2) 68%);
+      }
+
+      .health-visual::after {
+        content: "200 OK";
+        position: absolute;
+        top: 28px;
+        right: 28px;
+        padding: 7px 10px;
+        border-radius: 999px;
+        background: var(--primary);
+        color: white;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .failure-diagram {
+        height: 210px;
+        margin-top: 22px;
+        border: 1px solid rgba(185, 77, 56, 0.2);
+        border-radius: 14px;
+        background: #fff9f7;
+        position: relative;
+      }
+
+      .failure-node {
+        position: absolute;
+        width: 150px;
+        height: 70px;
+        border-radius: 13px;
+        border: 1px solid var(--line);
+        background: #fff;
+        display: grid;
+        place-items: center;
+        font-size: 13px;
+        font-weight: 650;
+      }
+
+      .failure-node.good {
+        border-color: rgba(31, 157, 138, 0.28);
+        color: #157b6d;
+      }
+
+      .failure-node.bad {
+        border-color: rgba(185, 77, 56, 0.32);
+        color: var(--red);
+      }
+
+      .connector {
+        position: absolute;
+        height: 2px;
+        background: var(--line);
+      }
+
+      .connector.bad {
+        background: rgba(185, 77, 56, 0.34);
+      }
+
+      .confirm-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+        margin-top: 22px;
+      }
+
+      .resource-card {
+        padding: 18px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: #fff;
+      }
+
+      .resource-value {
+        margin-top: 16px;
+        font-size: 26px;
+        font-weight: 660;
+      }
+
+      .operate-map {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        margin-top: 22px;
+      }
+
+      .operate-tile {
+        min-height: 128px;
+        padding: 16px;
+        border-radius: 14px;
+        border: 1px solid var(--line);
+        background: #fff;
+      }
+
+      .operate-tile.active {
+        background: var(--primary-3);
+        border-color: rgba(31, 157, 138, 0.24);
+      }
+
+      .side-rail {
+        position: absolute;
+        right: 22px;
+        top: 180px;
+        writing-mode: vertical-rl;
+        color: var(--text-faint);
+        font-family: var(--serif);
+        font-size: 13px;
+        letter-spacing: 0.08em;
+      }
+
+      .caption-index {
+        position: absolute;
+        left: 34px;
+        bottom: 26px;
+        color: rgba(101, 118, 128, 0.55);
+        font-family: var(--serif);
+        font-size: 30px;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="sheet">
+      <section class="artboard" id="section-01-home">
+        <div class="hero-home">
+          <div class="home-left">
+            <div class="brand-row">
+              <div class="brand-mark"></div>
+              <div class="brand-name">ShipRepo</div>
+            </div>
+            <h1 class="home-title">Turn a repo into a Sealos preview.</h1>
+            <p class="home-copy">
+              Select a GitHub repository, let ShipRepo inspect deployment readiness, then review the preview result before
+              publishing.
+            </p>
+            <div class="pill-row" style="gap: 10px; margin-top: 32px">
+              <span class="tag green">GitHub connected</span>
+              <span class="tag">Devbox runtime ready</span>
+              <span class="tag">Codex path fixed</span>
+            </div>
+            <div class="repo-picker">
+              <div class="section-title">
+                <h3>Create Sealos lifecycle task</h3>
+                <span class="meta">One clear path: repo -> preview -> ship</span>
+              </div>
+              <div class="picker-grid">
+                <div class="field">labring / storefront-demo</div>
+                <div class="field">main</div>
+                <div class="button primary">Start analysis</div>
+              </div>
+            </div>
+          </div>
+          <div class="home-right">
+            <div class="artifact-stack">
+              <div class="artifact-card small">
+                <span class="eyebrow neutral">Readiness</span>
+                <h3 style="margin-top: 14px">Action needed before preview</h3>
+                <p class="meta" style="margin-top: 8px">Missing production start command</p>
+              </div>
+              <div class="artifact-card large">
+                <span class="eyebrow">Preview result</span>
+                <h2 style="margin-top: 14px">The repo can run after two deployment changes.</h2>
+                <div class="mini-browser"></div>
+              </div>
+              <div class="artifact-card float">
+                <span class="eyebrow">Changed files</span>
+                <div class="file-row" style="margin-top: 10px; min-height: 36px">
+                  <span class="file-name mono">Dockerfile</span>
+                  <span class="tag green">deploy only</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="caption-index">01 / Home</div>
+      </section>
+
+      <section class="artboard" id="section-02-analyze">
+        <div class="surface">
+          <div class="workspace">
+            <aside class="sidebar">
+              <div class="brand-row">
+                <div class="brand-mark"></div>
+                <div class="brand-name">ShipRepo</div>
+              </div>
+              <div class="sidebar-section">
+                <p class="sidebar-label">Tasks</p>
+                <div class="repo-item active">
+                  <span class="repo-dot"></span>storefront-demo
+                  <span class="repo-sub">Action needed</span>
+                </div>
+                <div class="repo-item">docs-site<span class="repo-sub">Preview ready</span></div>
+                <div class="repo-item">api-worker<span class="repo-sub">Running check</span></div>
+              </div>
+            </aside>
+            <section class="main">
+              <div class="topbar">
+                <div class="crumb"><strong>labring/storefront-demo</strong> / main / run #184</div>
+                <div class="pill-row" style="gap: 10px">
+                  <span class="tag orange">Needs input</span>
+                  <div class="button primary">Save and continue</div>
+                </div>
+              </div>
+              <div class="content">
+                <div class="two-col">
+                  <div>
+                    <div class="panel result-panel">
+                      <span class="eyebrow neutral">Current result</span>
+                      <h1>Action needed before preview</h1>
+                      <p class="subcopy" style="max-width: 690px; margin-top: 18px">
+                        ShipRepo found the app framework and build command, but cannot create a cloud preview until the
+                        production start command and required secrets are confirmed.
+                      </p>
+                      <div class="analysis-grid">
+                        <div class="check-grid">
+                          <div class="check-card">
+                            <span class="tag green">Detected</span>
+                            <h3 style="margin-top: 12px">Next.js app</h3>
+                            <p class="meta" style="margin-top: 6px">pnpm build</p>
+                          </div>
+                          <div class="check-card warn">
+                            <span class="tag orange">Missing</span>
+                            <h3 style="margin-top: 12px">Start command</h3>
+                            <p class="meta" style="margin-top: 6px">Required for preview</p>
+                          </div>
+                        </div>
+                        <div class="small-card required-card">
+                          <h3>Required user action</h3>
+                          <p class="meta" style="margin-top: 8px">
+                            Confirm production env vars. Secret values stay hidden after save.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="stepper">
+                      <div class="step done"><b>Analyze</b><span>completed</span></div>
+                      <div class="step current"><b>Fix</b><span>waiting</span></div>
+                      <div class="step"><b>Build</b><span>next</span></div>
+                      <div class="step"><b>Preview</b><span>next</span></div>
+                      <div class="step"><b>Ship</b><span>later</span></div>
+                      <div class="step"><b>Operate</b><span>later</span></div>
+                    </div>
+                  </div>
+                  <aside class="stack">
+                    <div class="panel pad">
+                      <div class="section-title"><h3>Confirm inputs</h3><span class="tag orange">2 items</span></div>
+                      <div class="env-grid">
+                        <div class="env-row">
+                          <span class="env-key">START_COMMAND</span>
+                          <div class="input-mask"></div>
+                          <span class="button">Save</span>
+                        </div>
+                        <div class="env-row">
+                          <span class="env-key">DATABASE_URL</span>
+                          <div class="input-mask"></div>
+                          <span class="button">Add</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="panel pad plain">
+                      <h3>Why this matters</h3>
+                      <p class="subcopy" style="font-size: 14px; margin-top: 10px">
+                        A preview URL should prove the repo can run in Sealos cloud, not just pass local install.
+                      </p>
+                    </div>
+                  </aside>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+        <div class="caption-index">02 / Analyze</div>
+      </section>
+
+      <section class="artboard" id="section-03-review">
+        <div class="surface">
+          <div class="workspace">
+            <aside class="sidebar">
+              <div class="brand-row">
+                <div class="brand-mark"></div>
+                <div class="brand-name">ShipRepo</div>
+              </div>
+              <div class="sidebar-section">
+                <p class="sidebar-label">Review</p>
+                <div class="repo-item active">
+                  <span class="repo-dot"></span>deployment changes
+                  <span class="repo-sub">Ready to approve</span>
+                </div>
+              </div>
+            </aside>
+            <section class="main">
+              <div class="topbar">
+                <div class="crumb"><strong>labring/storefront-demo</strong> / main / run #184</div>
+                <div class="pill-row" style="gap: 10px">
+                  <div class="button ghost">Create pull request</div>
+                  <div class="button primary">Approve preview build</div>
+                </div>
+              </div>
+              <div class="content">
+                <div class="two-col">
+                  <div class="stack">
+                    <div class="panel result-panel" style="min-height: 224px">
+                      <span class="eyebrow">Review deployment changes</span>
+                      <h1 style="font-size: 48px">Three files changed for Sealos readiness.</h1>
+                      <p class="subcopy" style="max-width: 760px; margin-top: 16px">
+                        The patch only touches deployment files: image build, ignored files, and Sealos template values.
+                        Application logic is unchanged.
+                      </p>
+                    </div>
+                    <div class="panel diff-panel">
+                      <div class="diff-files">
+                        <div class="file-row">
+                          <div class="file-main">
+                            <span class="file-name mono">Dockerfile</span>
+                            <span class="file-note">adds production runtime</span>
+                          </div>
+                          <span class="tag green">safe</span>
+                        </div>
+                        <div class="file-row">
+                          <div class="file-main">
+                            <span class="file-name mono">sealos.yaml</span>
+                            <span class="file-note">sets port and health check</span>
+                          </div>
+                          <span class="tag green">safe</span>
+                        </div>
+                        <div class="file-row">
+                          <div class="file-main">
+                            <span class="file-name mono">.dockerignore</span>
+                            <span class="file-note">reduces image context</span>
+                          </div>
+                          <span class="tag">neutral</span>
+                        </div>
+                      </div>
+                      <div class="diff-code">
+                        <div class="code-plus">+ FROM node:22-alpine AS runner</div>
+                        <div class="code-plus">+ WORKDIR /app</div>
+                        <div class="code-plus">+ ENV HOSTNAME=0.0.0.0</div>
+                        <div class="code-plus">+ EXPOSE 3000</div>
+                        <div class="code-plus">+ CMD ["pnpm", "start"]</div>
+                        <div class="code-minus">- # no production runtime defined</div>
+                        <br />
+                        <div class="code-plus">+ healthCheck: /api/health</div>
+                        <div class="code-plus">+ targetPort: 3000</div>
+                      </div>
+                    </div>
+                  </div>
+                  <aside class="stack">
+                    <div class="panel pad">
+                      <div class="section-title"><h3>Before building</h3><span class="tag green">low risk</span></div>
+                      <div class="stack">
+                        <div class="small-card">
+                          <h3>No business logic touched</h3>
+                          <p class="meta" style="margin-top: 7px">Only deployment surface is changed.</p>
+                        </div>
+                        <div class="small-card">
+                          <h3>Preview build next</h3>
+                          <p class="meta" style="margin-top: 7px">Cloud image will be built after approval.</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="composer">
+                      <span>Ask to adjust port, env vars, image size, or PR target...</span>
+                      <div class="button">Send</div>
+                    </div>
+                  </aside>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+        <div class="side-rail">DEPLOYMENT CHANGES ARE EVIDENCE, NOT THE MAIN NAVIGATION</div>
+        <div class="caption-index">03 / Review</div>
+      </section>
+
+      <section class="artboard" id="section-04-preview">
+        <div class="surface">
+          <div class="workspace">
+            <aside class="sidebar">
+              <div class="brand-row">
+                <div class="brand-mark"></div>
+                <div class="brand-name">ShipRepo</div>
+              </div>
+              <div class="sidebar-section">
+                <p class="sidebar-label">Recent runs</p>
+                <div class="repo-item active">
+                  <span class="repo-dot"></span>run #184
+                  <span class="repo-sub">Preview ready</span>
+                </div>
+                <div class="repo-item">run #183<span class="repo-sub">Failed build</span></div>
+              </div>
+            </aside>
+            <section class="main">
+              <div class="topbar">
+                <div class="crumb"><strong>labring/storefront-demo</strong> / preview / run #184</div>
+                <div class="pill-row" style="gap: 10px">
+                  <div class="button primary">Open preview</div>
+                  <div class="button">Publish</div>
+                </div>
+              </div>
+              <div class="content">
+                <div class="two-col">
+                  <div>
+                    <div class="panel result-panel">
+                      <span class="eyebrow">Current result</span>
+                      <h1>Preview is ready</h1>
+                      <p class="subcopy" style="max-width: 660px; margin-top: 16px">
+                        The cloud image is running on Sealos and passed the latest health check. Review the deployment
+                        changes before publishing production.
+                      </p>
+                      <div class="url-card">
+                        <div>
+                          <div class="url">storefront-demo-pr-184.sealos.run</div>
+                          <div class="meta" style="margin-top: 6px">Health 200 OK · Runtime Node 22 · Image ready</div>
+                        </div>
+                        <div class="button primary">Open preview</div>
+                      </div>
+                    </div>
+                    <div class="stepper">
+                      <div class="step done"><b>Analyze</b><span>done</span></div>
+                      <div class="step done"><b>Fix</b><span>done</span></div>
+                      <div class="step done"><b>Build</b><span>done</span></div>
+                      <div class="step current"><b>Preview</b><span>ready</span></div>
+                      <div class="step"><b>Ship</b><span>review</span></div>
+                      <div class="step"><b>Operate</b><span>later</span></div>
+                    </div>
+                    <div class="panel" style="margin-top: 22px">
+                      <div class="tabs">
+                        <div class="tab active">Summary</div>
+                        <div class="tab">Changes</div>
+                        <div class="tab">Logs</div>
+                        <div class="tab">Events</div>
+                        <div class="tab">Deployment</div>
+                      </div>
+                      <div class="event-row">
+                        <div class="event-icon"></div>
+                        <div>
+                          <div class="event-title">Preview route became reachable</div>
+                          <div class="meta">The last health check returned 200 OK.</div>
+                        </div>
+                        <div class="event-time">1m ago</div>
+                      </div>
+                      <div class="event-row">
+                        <div class="event-icon"></div>
+                        <div>
+                          <div class="event-title">Image build completed</div>
+                          <div class="meta">The image was pushed to the configured registry.</div>
+                        </div>
+                        <div class="event-time">4m ago</div>
+                      </div>
+                    </div>
+                  </div>
+                  <aside class="stack">
+                    <div class="panel pad">
+                      <div class="health-visual"></div>
+                      <div class="metric-row" style="justify-content: space-between; margin-top: 16px">
+                        <span class="meta">Latest check</span>
+                        <span class="tag green">healthy</span>
+                      </div>
+                    </div>
+                    <div class="panel pad plain">
+                      <div class="section-title"><h3>Before publishing</h3><span class="tag">2 steps</span></div>
+                      <div class="stack">
+                        <div class="small-card">Review deployment file changes</div>
+                        <div class="small-card">Confirm production env vars</div>
+                      </div>
+                    </div>
+                  </aside>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+        <div class="caption-index">04 / Preview</div>
+      </section>
+
+      <section class="artboard" id="section-05-failed">
+        <div class="surface">
+          <div class="workspace">
+            <aside class="sidebar">
+              <div class="brand-row">
+                <div class="brand-mark"></div>
+                <div class="brand-name">ShipRepo</div>
+              </div>
+              <div class="sidebar-section">
+                <p class="sidebar-label">Failure summary</p>
+                <div class="repo-item active">
+                  <span class="repo-dot" style="background: var(--red)"></span>run #185
+                  <span class="repo-sub">Preview failed</span>
+                </div>
+              </div>
+            </aside>
+            <section class="main">
+              <div class="topbar">
+                <div class="crumb"><strong>labring/api-worker</strong> / main / run #185</div>
+                <div class="pill-row" style="gap: 10px">
+                  <span class="tag red">Preview failed</span>
+                  <div class="button primary">Retry with fix</div>
+                </div>
+              </div>
+              <div class="content">
+                <div class="two-col">
+                  <div>
+                    <div class="panel result-panel">
+                      <span class="eyebrow red">Current result</span>
+                      <h1>Preview could not be created</h1>
+                      <p class="subcopy" style="max-width: 700px; margin-top: 16px">
+                        The image built successfully, but the service never exposed the expected port inside the Sealos
+                        preview. ShipRepo can patch the listen address and retry.
+                      </p>
+                      <div class="failure-diagram">
+                        <div class="failure-node good" style="left: 48px; top: 70px">Build passed</div>
+                        <div class="connector" style="left: 198px; top: 104px; width: 140px"></div>
+                        <div class="failure-node good" style="left: 338px; top: 70px">Image pushed</div>
+                        <div class="connector bad" style="left: 488px; top: 104px; width: 140px"></div>
+                        <div class="failure-node bad" style="left: 628px; top: 70px">Port closed</div>
+                      </div>
+                    </div>
+                    <div class="panel" style="margin-top: 22px">
+                      <div class="tabs">
+                        <div class="tab active">Summary</div>
+                        <div class="tab">Logs</div>
+                        <div class="tab">Events</div>
+                      </div>
+                      <div class="event-row">
+                        <div class="event-icon" style="background: #ffe8e2"></div>
+                        <div>
+                          <div class="event-title">Recommended fix available</div>
+                          <div class="meta">Set service host to 0.0.0.0 and keep target port aligned.</div>
+                        </div>
+                        <div class="event-time">now</div>
+                      </div>
+                    </div>
+                  </div>
+                  <aside class="stack">
+                    <div class="panel pad failed-card">
+                      <div class="section-title"><h3>Next action</h3><span class="tag red">required</span></div>
+                      <p class="subcopy" style="font-size: 14px">
+                        Retry with a deployment-only fix. Raw logs stay available in the evidence tab.
+                      </p>
+                      <div class="button primary" style="margin-top: 20px; width: 100%">Retry with fix</div>
+                    </div>
+                    <div class="panel pad plain">
+                      <h3>What will change</h3>
+                      <div class="stack" style="margin-top: 14px">
+                        <div class="small-card">Update start command host binding</div>
+                        <div class="small-card">Verify Sealos target port</div>
+                        <div class="small-card">Run health check again</div>
+                      </div>
+                    </div>
+                  </aside>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+        <div class="caption-index">05 / Failed</div>
+      </section>
+
+      <section class="artboard" id="section-06-ship-operate">
+        <div class="surface">
+          <div class="workspace">
+            <aside class="sidebar">
+              <div class="brand-row">
+                <div class="brand-mark"></div>
+                <div class="brand-name">ShipRepo</div>
+              </div>
+              <div class="sidebar-section">
+                <p class="sidebar-label">Application</p>
+                <div class="repo-item active">
+                  <span class="repo-dot"></span>storefront-demo
+                  <span class="repo-sub">Production ready</span>
+                </div>
+              </div>
+            </aside>
+            <section class="main">
+              <div class="topbar">
+                <div class="crumb"><strong>labring/storefront-demo</strong> / production / run #184</div>
+                <div class="pill-row" style="gap: 10px">
+                  <div class="button danger">Cancel</div>
+                  <div class="button primary">Publish production</div>
+                </div>
+              </div>
+              <div class="content">
+                <div class="two-col">
+                  <div>
+                    <div class="panel result-panel">
+                      <span class="eyebrow">Production is ready to publish</span>
+                      <h1 style="font-size: 50px">Preview verified. Publish when ready.</h1>
+                      <p class="subcopy" style="max-width: 690px; margin-top: 16px">
+                        ShipRepo will promote the verified image and Sealos template into a production deployment after
+                        explicit confirmation.
+                      </p>
+                      <div class="confirm-grid">
+                        <div class="resource-card">
+                          <span class="meta">Production URL</span>
+                          <div class="resource-value mono" style="font-size: 22px">storefront.sealos.app</div>
+                        </div>
+                        <div class="resource-card">
+                          <span class="meta">Resource plan</span>
+                          <div class="resource-value">1 CPU · 1 GiB</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="panel pad" style="margin-top: 22px">
+                      <div class="section-title"><h3>Operate after launch</h3><span class="tag green">same workspace</span></div>
+                      <div class="operate-map">
+                        <div class="operate-tile active">
+                          <h3>Logs</h3>
+                          <p class="meta" style="margin-top: 10px">Summaries first, raw output on demand.</p>
+                        </div>
+                        <div class="operate-tile">
+                          <h3>Env vars</h3>
+                          <p class="meta" style="margin-top: 10px">Change values and redeploy with confirmation.</p>
+                        </div>
+                        <div class="operate-tile">
+                          <h3>Rollback</h3>
+                          <p class="meta" style="margin-top: 10px">High-risk actions require approval.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <aside class="stack">
+                    <div class="panel pad">
+                      <div class="section-title"><h3>Publish checklist</h3><span class="tag green">ready</span></div>
+                      <div class="stack">
+                        <div class="small-card">Preview URL verified</div>
+                        <div class="small-card">Env vars confirmed</div>
+                        <div class="small-card">Deployment changes reviewed</div>
+                      </div>
+                    </div>
+                    <div class="composer">
+                      <span>Ask to bind a domain, adjust env vars, redeploy, or create a PR...</span>
+                      <div class="button">Send</div>
+                    </div>
+                  </aside>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+        <div class="caption-index">06 / Ship</div>
+      </section>
+    </main>
+  </body>
+</html>

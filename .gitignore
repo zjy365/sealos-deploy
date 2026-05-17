@@ -62,4 +62,5 @@ Thumbs.db
 # opensrc - source code for packages
 opensrc/
 
-specs
+
+.playwright-mcp

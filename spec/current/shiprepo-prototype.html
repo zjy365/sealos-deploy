@@ -1,0 +1,1362 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ShipRepo workspace</title>
+    <link rel="icon" href="data:," />
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Chivo:wght@500;650;800&family=Martian+Mono:wght@400;600&display=swap");
+
+      :root {
+        --background: oklch(0.986 0.006 210);
+        --foreground: oklch(0.176 0.014 235);
+        --card: oklch(0.997 0.003 210);
+        --paper: oklch(0.992 0.005 210);
+        --primary: oklch(0.56 0.105 176);
+        --primary-foreground: oklch(0.985 0.004 190);
+        --secondary: oklch(0.944 0.012 218);
+        --muted: oklch(0.956 0.008 220);
+        --muted-foreground: oklch(0.502 0.018 235);
+        --accent: oklch(0.932 0.028 176);
+        --accent-foreground: oklch(0.342 0.068 176);
+        --warning: oklch(0.68 0.12 86);
+        --destructive: oklch(0.57 0.185 25);
+        --border: oklch(0.895 0.012 220);
+        --rule: oklch(0.83 0.012 220);
+        --rail: oklch(0.968 0.007 215);
+        --shadow: 0 1px 0 oklch(0.72 0.012 220 / 0.22);
+        --shadow-lg: 0 1px 0 oklch(0.72 0.012 220 / 0.25), 0 16px 34px -30px hsl(220 20% 18% / 0.34);
+        --radius-sm: 6px;
+        --radius-md: 10px;
+        --radius-lg: 14px;
+        --radius-xl: 18px;
+        --sans: "Atkinson Hyperlegible", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        --display: "Chivo", var(--sans);
+        --mono: "Martian Mono", "SFMono-Regular", Consolas, monospace;
+        --space-1: 4px;
+        --space-2: 8px;
+        --space-3: 12px;
+        --space-4: 16px;
+        --space-6: 24px;
+        --space-8: 32px;
+        --space-12: 48px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        min-height: 100%;
+        background: var(--background);
+        color: var(--foreground);
+        font-family: var(--sans);
+        letter-spacing: 0;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+          repeating-linear-gradient(180deg, transparent 0 31px, oklch(0.9 0.01 220 / 0.36) 31px 32px),
+          linear-gradient(180deg, var(--background), oklch(0.972 0.007 215));
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      .app-shell {
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: 272px minmax(0, 1fr);
+      }
+
+      .rail {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr) auto;
+        gap: var(--space-6);
+        padding: var(--space-4);
+        border-right: 1px solid var(--border);
+        background: var(--rail);
+      }
+
+      .brand {
+        min-height: 42px;
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+      }
+
+      .mark {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        background: var(--primary);
+        color: var(--primary-foreground);
+        font-family: var(--display);
+        font-weight: 800;
+        transform: rotate(-4deg);
+      }
+
+      .brand strong {
+        display: block;
+        font-family: var(--display);
+        font-size: 15px;
+        font-weight: 800;
+      }
+
+      .brand span:last-child {
+        display: block;
+        margin-top: 2px;
+        color: var(--muted-foreground);
+        font-size: 11px;
+      }
+
+      .rail-section {
+        display: grid;
+        gap: var(--space-3);
+        min-width: 0;
+      }
+
+      .rail-label,
+      .kicker,
+      .meta-label {
+        color: var(--muted-foreground);
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .rail-list {
+        display: grid;
+        gap: var(--space-2);
+      }
+
+      .repo-tab {
+        width: 100%;
+        min-height: 64px;
+        border: 0;
+        border-radius: var(--radius-md);
+        display: grid;
+        grid-template-columns: 34px minmax(0, 1fr);
+        gap: var(--space-3);
+        align-items: center;
+        padding: var(--space-3);
+        background: transparent;
+        color: var(--foreground);
+        text-align: left;
+        transition:
+          transform 150ms cubic-bezier(0.16, 1, 0.3, 1),
+          background-color 150ms cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      .repo-tab:hover,
+      .repo-tab.active {
+        background: oklch(0.997 0.003 210);
+        box-shadow: inset 0 0 0 1px var(--border), var(--shadow);
+      }
+
+      .repo-tab:active,
+      .button:active,
+      .quick-action:active {
+        transform: scale(0.98);
+      }
+
+      .repo-logo {
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        background: oklch(0.181 0.014 235);
+        color: oklch(0.948 0.006 210);
+        font-family: var(--display);
+        font-size: 14px;
+        font-weight: 800;
+      }
+
+      .repo-tab strong {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 13px;
+      }
+
+      .repo-tab span {
+        display: block;
+        margin-top: 4px;
+        color: var(--muted-foreground);
+        font-size: 11px;
+      }
+
+      .rail-footer {
+        display: grid;
+        gap: var(--space-3);
+      }
+
+      .account {
+        min-height: 46px;
+        border-radius: var(--radius-md);
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        padding: var(--space-2);
+        background: oklch(0.997 0.003 210);
+        box-shadow: inset 0 0 0 1px var(--border);
+      }
+
+      .avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 999px;
+        background:
+          linear-gradient(90deg, var(--primary) 50%, transparent 0),
+          var(--secondary);
+        box-shadow: inset 0 0 0 1px var(--rule);
+      }
+
+      .account strong {
+        display: block;
+        font-size: 12px;
+      }
+
+      .account span {
+        display: block;
+        margin-top: 2px;
+        color: var(--muted-foreground);
+        font-size: 11px;
+      }
+
+      .main {
+        min-width: 0;
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+      }
+
+      .topbar {
+        min-height: 58px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-4);
+        padding: 0 var(--space-6);
+        border-bottom: 1px solid var(--border);
+        background: oklch(0.992 0.004 210 / 0.96);
+      }
+
+      .crumb {
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        color: var(--muted-foreground);
+        font-size: 13px;
+      }
+
+      .crumb strong {
+        color: var(--foreground);
+      }
+
+      .button {
+        min-height: 40px;
+        border: 0;
+        border-radius: var(--radius-md);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-2);
+        padding: 0 15px;
+        background: var(--card);
+        color: var(--foreground);
+        box-shadow: inset 0 0 0 1px var(--border), var(--shadow);
+        font-size: 13px;
+        font-weight: 700;
+        transition:
+          transform 150ms cubic-bezier(0.16, 1, 0.3, 1),
+          box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1),
+          background-color 150ms cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      .button:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-lg);
+      }
+
+      .button.primary {
+        background: var(--primary);
+        color: var(--primary-foreground);
+        box-shadow: inset 0 0 0 1px oklch(0.43 0.09 176), var(--shadow);
+      }
+
+      .button.secondary {
+        background: var(--secondary);
+      }
+
+      .button.danger {
+        background: oklch(0.965 0.035 25);
+        color: var(--destructive);
+        box-shadow: inset 0 0 0 1px oklch(0.82 0.055 25), var(--shadow);
+      }
+
+      .content {
+        width: min(1180px, calc(100vw - 320px));
+        margin: 0 auto;
+        padding: var(--space-8) 0 var(--space-12);
+      }
+
+      .route {
+        display: none;
+        animation: enter 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+      }
+
+      .route.active {
+        display: block;
+      }
+
+      @keyframes enter {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .route {
+          animation: none;
+        }
+
+        .button,
+        .repo-tab,
+        .quick-action {
+          transition-duration: 1ms;
+        }
+      }
+
+      .page-head {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: var(--space-6);
+        align-items: end;
+        margin-bottom: var(--space-6);
+      }
+
+      .title {
+        margin-top: var(--space-2);
+        max-width: 760px;
+        font-family: var(--display);
+        font-size: 34px;
+        line-height: 1.05;
+        font-weight: 800;
+        text-wrap: balance;
+      }
+
+      .lead {
+        margin-top: var(--space-3);
+        max-width: 680px;
+        color: var(--muted-foreground);
+        font-size: 14px;
+        line-height: 1.65;
+        text-wrap: pretty;
+      }
+
+      .dashboard-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 340px;
+        grid-template-areas:
+          "hero queue"
+          "recent queue";
+        gap: var(--space-4);
+        align-items: start;
+      }
+
+      .panel,
+      .stage-card,
+      .ops-card {
+        border-radius: var(--radius-xl);
+        background: var(--paper);
+        box-shadow: inset 0 0 0 1px var(--border), var(--shadow);
+      }
+
+      .panel-head {
+        min-height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-3);
+        padding: 0 var(--space-4);
+        border-bottom: 1px solid var(--border);
+      }
+
+      .panel-head strong {
+        font-size: 14px;
+      }
+
+      .panel-body {
+        padding: var(--space-4);
+      }
+
+      .hero-panel {
+        grid-area: hero;
+        min-height: 292px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 220px;
+        gap: var(--space-8);
+        align-items: end;
+        padding: var(--space-6);
+        background:
+          linear-gradient(90deg, oklch(0.9 0.012 220 / 0.45) 1px, transparent 1px) 0 0 / 34px 34px,
+          linear-gradient(180deg, oklch(0.997 0.003 210), oklch(0.974 0.008 210));
+      }
+
+      .hero-panel h1 {
+        margin-top: var(--space-3);
+        max-width: 640px;
+        font-family: var(--display);
+        font-size: clamp(38px, 5vw, 58px);
+        line-height: 1;
+        font-weight: 800;
+      }
+
+      .hero-stats {
+        display: grid;
+        gap: var(--space-3);
+      }
+
+      .stat-line {
+        min-height: 58px;
+        display: grid;
+        align-content: center;
+        gap: var(--space-1);
+        border-radius: var(--radius-md);
+        background: oklch(0.997 0.003 210 / 0.8);
+        box-shadow: inset 0 0 0 1px var(--border);
+        padding: var(--space-3);
+      }
+
+      .stat-line strong {
+        font-size: 18px;
+      }
+
+      .stat-line span {
+        color: var(--muted-foreground);
+        font-size: 12px;
+      }
+
+      .recent-panel {
+        grid-area: recent;
+      }
+
+      .queue-panel {
+        grid-area: queue;
+      }
+
+      .list,
+      .stack,
+      .event-list {
+        display: grid;
+        gap: var(--space-2);
+      }
+
+      .repo-row,
+      .queue-row,
+      .event-row,
+      .op-row {
+        min-height: 64px;
+        border-radius: var(--radius-md);
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: var(--space-3);
+        align-items: center;
+        padding: var(--space-3);
+        background: oklch(0.982 0.005 210);
+        box-shadow: inset 0 0 0 1px var(--border);
+      }
+
+      .repo-row {
+        width: 100%;
+        border: 0;
+        grid-template-columns: 36px minmax(0, 1fr) auto;
+        color: var(--foreground);
+        text-align: left;
+        transition:
+          transform 150ms cubic-bezier(0.16, 1, 0.3, 1),
+          background-color 150ms cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      .repo-row:hover {
+        background: oklch(0.955 0.018 176);
+      }
+
+      .repo-row strong,
+      .queue-row strong,
+      .event-row strong,
+      .op-row strong {
+        display: block;
+        font-size: 13px;
+      }
+
+      .repo-row span,
+      .queue-row span,
+      .event-row span,
+      .op-row span {
+        display: block;
+        margin-top: var(--space-1);
+        color: var(--muted-foreground);
+        font-size: 11px;
+        line-height: 1.45;
+      }
+
+      .repo-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        background: oklch(0.181 0.014 235);
+        color: oklch(0.948 0.006 210);
+        font-family: var(--display);
+        font-weight: 800;
+      }
+
+      .pill,
+      .eyebrow {
+        min-height: 26px;
+        border-radius: var(--radius-sm);
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 0 9px;
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+
+      .pill {
+        background: var(--muted);
+        color: var(--muted-foreground);
+      }
+
+      .eyebrow,
+      .pill.good {
+        background: var(--accent);
+        color: var(--accent-foreground);
+      }
+
+      .pill.warn {
+        background: oklch(0.96 0.03 86);
+        color: oklch(0.42 0.08 86);
+      }
+
+      .pill.bad {
+        background: oklch(0.965 0.035 25);
+        color: var(--destructive);
+      }
+
+      .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 999px;
+        background: currentColor;
+      }
+
+      .deploy-layout,
+      .pipeline-layout,
+      .ops-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 340px;
+        gap: var(--space-4);
+        align-items: start;
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 320px;
+        gap: var(--space-4);
+      }
+
+      .field {
+        display: grid;
+        gap: var(--space-2);
+      }
+
+      .field + .field {
+        margin-top: var(--space-4);
+      }
+
+      .field label {
+        color: var(--muted-foreground);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        border: 0;
+        border-radius: var(--radius-md);
+        background: var(--muted);
+        color: var(--foreground);
+        min-height: 44px;
+        padding: 0 13px;
+        outline: 2px solid transparent;
+        outline-offset: 2px;
+      }
+
+      textarea {
+        min-height: 120px;
+        padding: 12px 13px;
+        resize: vertical;
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        outline-color: var(--primary);
+      }
+
+      .stage-card {
+        overflow: hidden;
+      }
+
+      .stage-main {
+        min-height: 370px;
+        display: grid;
+        align-content: center;
+        gap: var(--space-6);
+        padding: var(--space-8);
+        background:
+          linear-gradient(90deg, oklch(0.9 0.012 220 / 0.45) 1px, transparent 1px) 0 0 / 34px 34px,
+          linear-gradient(180deg, oklch(0.997 0.003 210), oklch(0.974 0.008 210));
+      }
+
+      .stage-main h1 {
+        max-width: 720px;
+        font-family: var(--display);
+        font-size: clamp(34px, 4.2vw, 54px);
+        line-height: 1;
+      }
+
+      .stage-main .lead {
+        margin-top: 0;
+      }
+
+      .action-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+      }
+
+      .preview-box {
+        width: min(660px, 100%);
+        min-height: 58px;
+        border-radius: var(--radius-md);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-3);
+        padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+        background: var(--card);
+        box-shadow: inset 0 0 0 1px var(--border), var(--shadow);
+      }
+
+      code {
+        font-family: var(--mono);
+        color: oklch(0.31 0.072 176);
+        font-size: 12px;
+        overflow-wrap: anywhere;
+      }
+
+      .stepper {
+        display: grid;
+        gap: var(--space-3);
+      }
+
+      .step {
+        display: grid;
+        grid-template-columns: 26px minmax(0, 1fr);
+        gap: var(--space-3);
+        align-items: start;
+      }
+
+      .step-mark {
+        width: 26px;
+        height: 26px;
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        background: var(--muted);
+        color: var(--muted-foreground);
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .step.done .step-mark,
+      .step.current .step-mark {
+        background: var(--primary);
+        color: var(--primary-foreground);
+      }
+
+      .step strong {
+        display: block;
+        font-size: 13px;
+      }
+
+      .step span {
+        display: block;
+        margin-top: 4px;
+        color: var(--muted-foreground);
+        font-size: 11px;
+      }
+
+      .details {
+        border-radius: var(--radius-md);
+        background: oklch(0.982 0.005 210);
+        box-shadow: inset 0 0 0 1px var(--border);
+        padding: var(--space-3);
+      }
+
+      .details summary {
+        cursor: pointer;
+        color: var(--muted-foreground);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .ops-card {
+        overflow: hidden;
+      }
+
+      .ops-main {
+        min-height: 320px;
+        display: grid;
+        align-content: center;
+        gap: var(--space-6);
+        padding: var(--space-8);
+      }
+
+      .ops-main h1 {
+        font-family: var(--display);
+        font-size: clamp(34px, 4.6vw, 58px);
+        line-height: 1;
+      }
+
+      .quick-actions {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: var(--space-2);
+        padding: var(--space-4);
+        border-top: 1px solid var(--border);
+      }
+
+      .quick-action {
+        min-height: 56px;
+        border: 0;
+        border-radius: var(--radius-md);
+        background: var(--secondary);
+        color: var(--foreground);
+        box-shadow: inset 0 0 0 1px var(--border), var(--shadow);
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .quick-action.danger {
+        background: oklch(0.965 0.035 25);
+        color: var(--destructive);
+      }
+
+      .site-frame {
+        min-height: 520px;
+        border-radius: var(--radius-xl);
+        display: grid;
+        place-items: center;
+        text-align: center;
+        background:
+          linear-gradient(90deg, oklch(0.9 0.012 220 / 0.45) 1px, transparent 1px) 0 0 / 34px 34px,
+          linear-gradient(180deg, oklch(0.997 0.003 210), oklch(0.974 0.008 210));
+        box-shadow: inset 0 0 0 1px var(--border), var(--shadow);
+        padding: var(--space-8);
+      }
+
+      .site-frame h1 {
+        margin-top: var(--space-4);
+        font-family: var(--display);
+        font-size: clamp(38px, 5vw, 62px);
+        line-height: 1;
+      }
+
+      @media (max-width: 1020px) {
+        .app-shell {
+          grid-template-columns: 1fr;
+        }
+
+        .rail {
+          position: static;
+          height: auto;
+          grid-template-rows: auto auto auto;
+          border-right: 0;
+          border-bottom: 1px solid var(--border);
+        }
+
+        .rail-list {
+          grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        }
+
+        .content {
+          width: min(100vw - 28px, 760px);
+        }
+
+        .dashboard-grid,
+        .deploy-layout,
+        .pipeline-layout,
+        .ops-layout,
+        .form-grid,
+        .hero-panel {
+          grid-template-columns: 1fr;
+          grid-template-areas: none;
+        }
+
+        .hero-panel,
+        .recent-panel,
+        .queue-panel {
+          grid-area: auto;
+        }
+
+        .page-head {
+          grid-template-columns: 1fr;
+        }
+
+        .topbar {
+          padding: 0 var(--space-4);
+        }
+
+        .quick-actions {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 620px) {
+        .rail {
+          padding: var(--space-3);
+        }
+
+        .topbar {
+          align-items: stretch;
+          flex-direction: column;
+          padding: var(--space-3);
+        }
+
+        .topbar .button,
+        .action-row .button,
+        .preview-box .button {
+          width: 100%;
+        }
+
+        .title,
+        .hero-panel h1,
+        .stage-main h1,
+        .ops-main h1 {
+          font-size: clamp(32px, 10vw, 46px);
+        }
+
+        .hero-panel,
+        .stage-main,
+        .ops-main,
+        .site-frame {
+          padding: var(--space-5, 20px);
+        }
+
+        .repo-row,
+        .preview-box {
+          grid-template-columns: 1fr;
+          display: grid;
+        }
+
+        .repo-row {
+          grid-template-columns: 36px minmax(0, 1fr);
+        }
+
+        .repo-row .pill {
+          grid-column: 2;
+          justify-self: start;
+        }
+
+        .quick-actions {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="rail">
+        <a class="brand" href="#home" data-goto="home" aria-label="ShipRepo home">
+          <span class="mark" aria-hidden="true">S</span>
+          <span><strong>ShipRepo</strong><span>Jingyang workspace</span></span>
+        </a>
+
+        <div class="rail-section">
+          <div class="rail-label">Repos</div>
+          <div class="rail-list">
+            <button class="repo-tab active" type="button" data-goto="ops">
+              <span class="repo-logo">N</span>
+              <span><strong>next-starter</strong><span>Production ready</span></span>
+            </button>
+            <button class="repo-tab" type="button" data-goto="preview-ready">
+              <span class="repo-logo">A</span>
+              <span><strong>aivive</strong><span>Preview waiting</span></span>
+            </button>
+            <button class="repo-tab" type="button" data-goto="needs-input">
+              <span class="repo-logo">O</span>
+              <span><strong>open-lovable</strong><span>Needs env</span></span>
+            </button>
+            <button class="repo-tab" type="button" data-goto="failed">
+              <span class="repo-logo">G</span>
+              <span><strong>getscholar</strong><span>Build failed</span></span>
+            </button>
+          </div>
+        </div>
+
+        <div class="rail-footer">
+          <button class="button primary" type="button" data-goto="new-deploy">Deploy repo</button>
+          <div class="account">
+            <span class="avatar" aria-hidden="true"></span>
+            <span><strong>Jingyang</strong><span>GitHub connected</span></span>
+          </div>
+        </div>
+      </aside>
+
+      <div class="main">
+        <header class="topbar">
+          <div class="crumb"><strong id="route-title">Workspace</strong><span id="route-subtitle">4 repos, 1 waiting action</span></div>
+          <div class="action-row">
+            <button class="button secondary" type="button" data-goto="home">Queue</button>
+            <button class="button primary" type="button" data-goto="new-deploy">Deploy repo</button>
+          </div>
+        </header>
+
+        <main class="content" id="main-content">
+          <section class="route active" data-route="home" data-title="Workspace" data-subtitle="4 repos, 1 waiting action">
+            <div class="page-head">
+              <div>
+                <div class="kicker">Today</div>
+                <h1 class="title">Repo shipping desk</h1>
+                <p class="lead">A real workspace should show what needs attention, what shipped, and where to start the next deploy.</p>
+              </div>
+              <button class="button primary" type="button" data-goto="new-deploy">Deploy another repo</button>
+            </div>
+
+            <div class="dashboard-grid">
+              <section class="panel hero-panel">
+                <div>
+                  <span class="eyebrow"><span class="dot"></span>Waiting action</span>
+                  <h1>aivive preview is ready to ship.</h1>
+                  <p class="lead">Preview passed health checks. Production has not moved. The next product decision is explicit release.</p>
+                  <div class="action-row" style="margin-top: var(--space-6)">
+                    <button class="button secondary" type="button" data-goto="preview-ready">Review preview</button>
+                    <button class="button primary" type="button" data-goto="ops">Ship production</button>
+                  </div>
+                </div>
+                <div class="hero-stats">
+                  <div class="stat-line"><strong>4</strong><span>Repos in workspace</span></div>
+                  <div class="stat-line"><strong>2m</strong><span>Latest production deploy</span></div>
+                  <div class="stat-line"><strong>0</strong><span>Production blockers</span></div>
+                </div>
+              </section>
+
+              <section class="panel recent-panel">
+                <div class="panel-head"><strong>Recent repos</strong><span class="pill">Live data mock</span></div>
+                <div class="panel-body">
+                  <div class="list">
+                    <button class="repo-row" type="button" data-goto="ops">
+                      <span class="repo-icon">N</span>
+                      <span><strong>next-starter</strong><span>Live at next-starter.sealos.run, a1b2c3d</span></span>
+                      <span class="pill good">Ready</span>
+                    </button>
+                    <button class="repo-row" type="button" data-goto="preview-ready">
+                      <span class="repo-icon">A</span>
+                      <span><strong>aivive</strong><span>Preview passed, production unchanged</span></span>
+                      <span class="pill warn">Review</span>
+                    </button>
+                    <button class="repo-row" type="button" data-goto="needs-input">
+                      <span class="repo-icon">O</span>
+                      <span><strong>open-lovable</strong><span>DATABASE_URL blocks preview</span></span>
+                      <span class="pill warn">Input</span>
+                    </button>
+                  </div>
+                </div>
+              </section>
+
+              <aside class="panel queue-panel">
+                <div class="panel-head"><strong>Activity queue</strong><span class="pill">Now</span></div>
+                <div class="panel-body">
+                  <div class="stack">
+                    <div class="queue-row"><div><strong>Preview ready</strong><span>aivive, d4e5f6a</span></div><span class="pill warn">User</span></div>
+                    <div class="queue-row"><div><strong>Production healthy</strong><span>next-starter, 42 requests</span></div><span class="pill good">Ok</span></div>
+                    <div class="queue-row"><div><strong>Env needed</strong><span>open-lovable, DATABASE_URL</span></div><span class="pill warn">Input</span></div>
+                    <div class="queue-row"><div><strong>Build failed</strong><span>getscholar, lockfile</span></div><span class="pill bad">Fix</span></div>
+                  </div>
+                </div>
+              </aside>
+            </div>
+          </section>
+
+          <section class="route" data-route="new-deploy" data-title="New deploy" data-subtitle="Choose repo, branch, and intent">
+            <div class="page-head">
+              <div>
+                <div class="kicker">New shipping lane</div>
+                <h1 class="title">Select the repo, then let ShipRepo prove it can run.</h1>
+                <p class="lead">The first product action is not choosing infrastructure. It is choosing the source repository.</p>
+              </div>
+            </div>
+
+            <div class="deploy-layout">
+              <section class="panel">
+                <div class="panel-head"><strong>GitHub repositories</strong><span class="pill good">Connected</span></div>
+                <div class="panel-body">
+                  <div class="list">
+                    <button class="repo-row" type="button" data-goto="pipeline">
+                      <span class="repo-icon">N</span>
+                      <span><strong>zjy365/next-starter</strong><span>Next.js, pnpm, main</span></span>
+                      <span class="pill">Select</span>
+                    </button>
+                    <button class="repo-row" type="button" data-goto="pipeline">
+                      <span class="repo-icon">A</span>
+                      <span><strong>zjy365/aivive</strong><span>Vite, main, 3 commits ahead</span></span>
+                      <span class="pill">Select</span>
+                    </button>
+                    <button class="repo-row" type="button" data-goto="pipeline">
+                      <span class="repo-icon">O</span>
+                      <span><strong>zjy365/open-lovable</strong><span>Unknown runtime, needs analysis</span></span>
+                      <span class="pill">Select</span>
+                    </button>
+                  </div>
+                </div>
+              </section>
+
+              <aside class="panel">
+                <div class="panel-head"><strong>Deploy intent</strong></div>
+                <div class="panel-body">
+                  <div class="field">
+                    <label>Branch</label>
+                    <select><option>main</option><option>preview</option></select>
+                  </div>
+                  <div class="field">
+                    <label>Goal</label>
+                    <textarea>Deploy this repo to Sealos and give me a preview URL.</textarea>
+                  </div>
+                  <div class="action-row" style="margin-top: var(--space-4)">
+                    <button class="button secondary" type="button" data-goto="home">Cancel</button>
+                    <button class="button primary" type="button" data-goto="pipeline">Start pipeline</button>
+                  </div>
+                </div>
+              </aside>
+            </div>
+          </section>
+
+          <section class="route" data-route="pipeline" data-title="Pipeline" data-subtitle="next-starter, main, build stage">
+            <div class="pipeline-layout">
+              <section class="stage-card">
+                <div class="panel-head"><strong>Current stage</strong><span class="pill warn">Build</span></div>
+                <div class="stage-main">
+                  <div>
+                    <span class="eyebrow"><span class="dot"></span>Preview build</span>
+                    <h1>Build is producing the proof URL.</h1>
+                    <p class="lead">ShipRepo found Next.js, generated deploy files, and is building the image. Production is untouched.</p>
+                  </div>
+                  <div class="action-row">
+                    <button class="button secondary" type="button" data-goto="needs-input">Needs input</button>
+                    <button class="button secondary" type="button" data-goto="failed">Simulate failure</button>
+                    <button class="button primary" type="button" data-goto="preview-ready">Preview ready</button>
+                  </div>
+                </div>
+              </section>
+
+              <aside class="panel">
+                <div class="panel-head"><strong>Lifecycle</strong><span class="pill">6 stages</span></div>
+                <div class="panel-body">
+                  <div class="stepper">
+                    <div class="step done"><span class="step-mark">1</span><div><strong>Analyze</strong><span>Next.js, pnpm, port 3000.</span></div></div>
+                    <div class="step done"><span class="step-mark">2</span><div><strong>Fix</strong><span>Dockerfile and health check prepared.</span></div></div>
+                    <div class="step current"><span class="step-mark">3</span><div><strong>Build</strong><span>Image build is running.</span></div></div>
+                    <div class="step"><span class="step-mark">4</span><div><strong>Preview</strong><span>Waiting for URL.</span></div></div>
+                    <div class="step"><span class="step-mark">5</span><div><strong>Ship</strong><span>Requires user confirmation.</span></div></div>
+                    <div class="step"><span class="step-mark">6</span><div><strong>Operate</strong><span>Only after production is live.</span></div></div>
+                  </div>
+                  <details class="details" style="margin-top: var(--space-4)">
+                    <summary>Evidence</summary>
+                    <div class="event-list" style="margin-top: var(--space-3)">
+                      <div class="event-row"><div><strong>Latest event</strong><span>Installing dependencies.</span></div><span class="pill">12s</span></div>
+                      <div class="event-row"><div><strong>Diff summary</strong><span>Dockerfile and deployment config prepared.</span></div><span class="pill">2 files</span></div>
+                    </div>
+                  </details>
+                </div>
+              </aside>
+            </div>
+          </section>
+
+          <section class="route" data-route="needs-input" data-title="Needs input" data-subtitle="open-lovable, DATABASE_URL required">
+            <div class="pipeline-layout">
+              <section class="stage-card">
+                <div class="panel-head"><strong>Waiting for user</strong><span class="pill warn">Missing env</span></div>
+                <div class="stage-main">
+                  <div>
+                    <span class="eyebrow"><span class="dot"></span>One blocker</span>
+                    <h1>DATABASE_URL is required before preview.</h1>
+                    <p class="lead">ShipRepo asks only for the value blocking this deploy. The secret belongs to Sealos runtime configuration.</p>
+                  </div>
+                  <div class="field" style="max-width: 560px">
+                    <label>DATABASE_URL</label>
+                    <input value="••••••••••••••••••••" />
+                  </div>
+                  <div class="action-row">
+                    <button class="button secondary" type="button" data-goto="pipeline">Back to pipeline</button>
+                    <button class="button primary" type="button" data-goto="preview-ready">Save and continue</button>
+                  </div>
+                </div>
+              </section>
+
+              <aside class="panel">
+                <div class="panel-head"><strong>Reason</strong></div>
+                <div class="panel-body">
+                  <div class="stack">
+                    <div class="event-row"><div><strong>Runtime dependency</strong><span>The app references a database at startup.</span></div><span class="pill warn">Required</span></div>
+                    <div class="event-row"><div><strong>Production safety</strong><span>No production write happens before preview works.</span></div><span class="pill good">Safe</span></div>
+                  </div>
+                </div>
+              </aside>
+            </div>
+          </section>
+
+          <section class="route" data-route="preview-ready" data-title="Preview ready" data-subtitle="aivive, preview URL available">
+            <div class="pipeline-layout">
+              <section class="stage-card">
+                <div class="panel-head"><strong>Preview result</strong><span class="pill good">Healthy</span></div>
+                <div class="stage-main">
+                  <div>
+                    <span class="eyebrow"><span class="dot"></span>Proof URL</span>
+                    <h1>The repo produced a working Sealos preview.</h1>
+                    <p class="lead">This is the product result before production can move.</p>
+                  </div>
+                  <div class="preview-box">
+                    <code>https://next-starter-pr-18.preview.sealos.run</code>
+                    <button class="button secondary" type="button" data-goto="preview-site">Open preview</button>
+                  </div>
+                  <div class="action-row">
+                    <button class="button secondary" type="button" data-goto="pipeline">Keep working</button>
+                    <button class="button primary" type="button" data-goto="ops">Ship production</button>
+                  </div>
+                </div>
+              </section>
+
+              <aside class="panel">
+                <div class="panel-head"><strong>Checks</strong></div>
+                <div class="panel-body">
+                  <div class="stack">
+                    <div class="event-row"><div><strong>HTTP health</strong><span>Preview returned 200.</span></div><span class="pill good">Pass</span></div>
+                    <div class="event-row"><div><strong>Runtime</strong><span>No startup error detected.</span></div><span class="pill good">Pass</span></div>
+                    <div class="event-row"><div><strong>Production</strong><span>Not changed yet.</span></div><span class="pill">Safe</span></div>
+                  </div>
+                </div>
+              </aside>
+            </div>
+          </section>
+
+          <section class="route" data-route="preview-site" data-title="Preview site" data-subtitle="Review before production">
+            <div class="site-frame">
+              <div>
+                <span class="repo-icon" style="margin: 0 auto">N</span>
+                <h1>next-starter preview</h1>
+                <p class="lead" style="margin-left: auto; margin-right: auto">Preview environment for validating the app before production traffic moves.</p>
+                <div class="action-row" style="justify-content: center; margin-top: var(--space-6)">
+                  <button class="button primary" type="button" data-goto="preview-ready">Back to preview decision</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="route" data-route="failed" data-title="Build failed" data-subtitle="getscholar, lockfile fix available">
+            <div class="pipeline-layout">
+              <section class="stage-card">
+                <div class="panel-head"><strong>Failure result</strong><span class="pill bad">Before preview</span></div>
+                <div class="stage-main">
+                  <div>
+                    <span class="eyebrow"><span class="dot"></span>Structured failure</span>
+                    <h1>Install failed because the lockfile is out of date.</h1>
+                    <p class="lead">No traffic moved. The next step is to refresh deploy-related files and retry this same lane.</p>
+                  </div>
+                  <div class="action-row">
+                    <button class="button secondary" type="button" data-goto="new-deploy">Cancel</button>
+                    <button class="button primary" type="button" data-goto="pipeline">Apply fix and retry</button>
+                  </div>
+                </div>
+              </section>
+
+              <aside class="panel">
+                <div class="panel-head"><strong>Evidence</strong></div>
+                <div class="panel-body">
+                  <div class="stack">
+                    <div class="event-row"><div><strong>Failure stage</strong><span>Install dependencies.</span></div><span class="pill">Install</span></div>
+                    <div class="event-row"><div><strong>Suggested fix</strong><span>Refresh lockfile and rerun build.</span></div><span class="pill good">Fixable</span></div>
+                  </div>
+                  <details class="details" style="margin-top: var(--space-4)">
+                    <summary>Raw log excerpt</summary>
+                    <code style="display: block; margin-top: var(--space-3)">ERR_PNPM_OUTDATED_LOCKFILE</code>
+                  </details>
+                </div>
+              </aside>
+            </div>
+          </section>
+
+          <section class="route" data-route="ops" data-title="Minimal ops" data-subtitle="next-starter, production ready">
+            <div class="ops-layout">
+              <section class="ops-card">
+                <div class="panel-head"><strong>Production</strong><span class="pill good">Ready</span></div>
+                <div class="ops-main">
+                  <div>
+                    <span class="eyebrow"><span class="dot"></span>Live URL</span>
+                    <h1>next-starter.sealos.run</h1>
+                    <p class="lead">Commit a1b2c3d is live. No blocker is affecting production.</p>
+                  </div>
+                  <div class="preview-box">
+                    <code>https://next-starter.sealos.run</code>
+                    <button class="button secondary" type="button" data-goto="live-site">Open app</button>
+                  </div>
+                </div>
+                <div class="quick-actions">
+                  <button class="quick-action" type="button" data-goto="pipeline">Redeploy</button>
+                  <button class="quick-action" type="button" data-goto="needs-input">Edit env</button>
+                  <button class="quick-action" type="button" data-goto="failed">View logs</button>
+                  <button class="quick-action danger" type="button" data-goto="rollback-confirm">Rollback</button>
+                </div>
+              </section>
+
+              <aside class="panel">
+                <div class="panel-head"><strong>Maintenance shelf</strong><span class="pill">Small by design</span></div>
+                <div class="panel-body">
+                  <div class="stack">
+                    <div class="op-row"><div><strong>Status</strong><span>Healthy, 42 requests in 24h.</span></div><span class="pill good">Ready</span></div>
+                    <div class="op-row"><div><strong>Latest deploy</strong><span>a1b2c3d, 2m ago.</span></div><span class="pill good">Success</span></div>
+                    <div class="op-row"><div><strong>Issues</strong><span>No blockers.</span></div><span class="pill">None</span></div>
+                    <div class="op-row"><div><strong>Console</strong><span>Advanced resources remain outside ShipRepo.</span></div><span class="pill">Deep link</span></div>
+                  </div>
+                </div>
+              </aside>
+            </div>
+          </section>
+
+          <section class="route" data-route="live-site" data-title="Live app" data-subtitle="Production target">
+            <div class="site-frame">
+              <div>
+                <span class="repo-icon" style="margin: 0 auto">N</span>
+                <h1>next-starter is live</h1>
+                <p class="lead" style="margin-left: auto; margin-right: auto">Production environment served from the last confirmed deploy.</p>
+                <div class="action-row" style="justify-content: center; margin-top: var(--space-6)">
+                  <button class="button primary" type="button" data-goto="ops">Back to ops</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="route" data-route="rollback-confirm" data-title="Rollback" data-subtitle="Confirm before traffic moves">
+            <div class="pipeline-layout">
+              <section class="stage-card">
+                <div class="panel-head"><strong>Rollback confirmation</strong><span class="pill warn">High risk</span></div>
+                <div class="stage-main">
+                  <div>
+                    <span class="eyebrow"><span class="dot"></span>User confirmation required</span>
+                    <h1>Rollback production to the previous healthy deploy?</h1>
+                    <p class="lead">High-risk actions stay explicit. The user sees what will change before traffic moves.</p>
+                  </div>
+                  <div class="action-row">
+                    <button class="button secondary" type="button" data-goto="ops">Cancel</button>
+                    <button class="button danger" type="button" data-goto="ops">Rollback now</button>
+                  </div>
+                </div>
+              </section>
+
+              <aside class="panel">
+                <div class="panel-head"><strong>Impact</strong></div>
+                <div class="panel-body">
+                  <div class="stack">
+                    <div class="op-row"><div><strong>Current</strong><span>d4e5f6a</span></div><span class="pill">Live</span></div>
+                    <div class="op-row"><div><strong>Target</strong><span>a1b2c3d</span></div><span class="pill good">Healthy</span></div>
+                  </div>
+                </div>
+              </aside>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <script>
+      const routes = new Set([...document.querySelectorAll("[data-route]")].map((route) => route.dataset.route));
+      const routeTitle = document.getElementById("route-title");
+      const routeSubtitle = document.getElementById("route-subtitle");
+
+      function showRoute(name, updateHash = true) {
+        const target = routes.has(name) ? name : "home";
+        document.querySelectorAll("[data-route]").forEach((route) => {
+          const active = route.dataset.route === target;
+          route.classList.toggle("active", active);
+          if (active) {
+            routeTitle.textContent = route.dataset.title || "Workspace";
+            routeSubtitle.textContent = route.dataset.subtitle || "";
+          }
+        });
+        document.querySelectorAll(".repo-tab").forEach((button) => button.classList.toggle("active", button.dataset.goto === target));
+        if (updateHash) history.replaceState(null, "", `#${target}`);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      document.querySelectorAll("[data-goto]").forEach((button) => {
+        button.addEventListener("click", (event) => {
+          event.preventDefault();
+          showRoute(button.dataset.goto);
+        });
+      });
+
+      showRoute(window.location.hash.slice(1) || "home", false);
+      window.addEventListener("hashchange", () => showRoute(window.location.hash.slice(1), false));
+    </script>
+  </body>
+</html>

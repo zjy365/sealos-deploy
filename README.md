@@ -124,9 +124,9 @@ Open [http://localhost:3000](http://localhost:3000), sign in with GitHub, choose
 
 ## Further Reading
 
-- [reference/product-overview.zh.md](reference/product-overview.zh.md): product positioning and lifecycle path
-- [reference/architecture.md](reference/architecture.md): request flow, runtime lifecycle, and module boundaries
-- [reference/configuration.md](reference/configuration.md): environment variables, auth setup, migrations, and runtime behavior
+- [spec/current/shiprepo-full-rewrite-architecture.zh.md](spec/current/shiprepo-full-rewrite-architecture.zh.md): current full rewrite architecture direction
+- [spec/current/shiprepo-prd.zh.md](spec/current/shiprepo-prd.zh.md): current product requirements
+- [spec/current/new-project-initial-architecture.zh.md](spec/current/new-project-initial-architecture.zh.md): current in-repo rewrite architecture direction
 
 ## Development
 
