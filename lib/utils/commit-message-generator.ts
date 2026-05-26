@@ -38,7 +38,7 @@ Examples of good commit messages:
 Return ONLY the commit message, nothing else.`
 
   try {
-    // Generate commit message using AI SDK 5 with AI Gateway
+    // Generate commit message using AI SDK with AI Gateway
     const result = await generateText({
       model: 'openai/gpt-5-nano',
       prompt,

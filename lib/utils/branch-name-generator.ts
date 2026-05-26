@@ -37,7 +37,7 @@ Examples of good branch names:
 Return ONLY the branch name, nothing else.`
 
   try {
-    // Generate branch name using AI SDK 5 with AI Gateway
+    // Generate branch name using AI SDK with AI Gateway
     const result = await generateText({
       model: 'openai/gpt-5-nano',
       prompt,

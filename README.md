@@ -50,7 +50,7 @@ The product is not intended to replace a local IDE or local `localhost:3000` dev
 - shadcn/ui
 - PostgreSQL
 - Drizzle ORM and drizzle-kit
-- AI SDK 5
+- AI SDK 6
 - Codex Gateway
 - Devbox runtime infrastructure
 
@@ -124,9 +124,7 @@ Open [http://localhost:3000](http://localhost:3000), sign in with GitHub, choose
 
 ## Further Reading
 
-- [spec/current/shiprepo-full-rewrite-architecture.zh.md](spec/current/shiprepo-full-rewrite-architecture.zh.md): current full rewrite architecture direction
-- [spec/current/shiprepo-prd.zh.md](spec/current/shiprepo-prd.zh.md): current product requirements
-- [spec/current/new-project-initial-architecture.zh.md](spec/current/new-project-initial-architecture.zh.md): current in-repo rewrite architecture direction
+- [spec/current/shiprepo-current-spec.zh.md](spec/current/shiprepo-current-spec.zh.md): current product and technical source of truth
 
 ## Development
 

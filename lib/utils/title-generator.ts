@@ -36,7 +36,7 @@ Examples of good titles:
 Return ONLY the title, nothing else.`
 
   try {
-    // Generate title using AI SDK 5 with AI Gateway
+    // Generate title using AI SDK with AI Gateway
     const result = await generateText({
       model: 'openai/gpt-5-nano',
       prompt: systemPrompt,
