@@ -47,8 +47,7 @@ interface EnsureTaskDevboxRuntimeOptions {
   logger?: TaskLogger
 }
 
-const DEVBOX_SEAKILLS_INSTALL_COMMAND =
-  'npx --yes skills add https://github.com/zjy365/seakills/tree/sandbox-skill-lite -y'
+const DEVBOX_SEAKILLS_INSTALL_COMMAND = 'npx --yes skills add https://github.com/Che-Zhu/brain-sandbox-skills -y'
 const DEVBOX_BOOTSTRAP_READY_TIMEOUT_MS = 60_000
 const DEVBOX_BOOTSTRAP_READY_POLL_MS = 2_000
 const DEVBOX_SKILL_INSTALL_MARKER = '__CODEX_SKILL_INSTALLED__:1'
@@ -363,12 +362,17 @@ ${managedCodexConfigToml}EOF`,
   }
 
   bootstrapScript.push(
-    'agent_skill_marker="$workspace_dir/.agents/skills/sealos-deploy/SKILL.md"',
-    'codex_skill_marker="$workspace_dir/.codex/skills/sealos-deploy/SKILL.md"',
+    'agent_skill_marker="$workspace_dir/.agents/skills/brain-github-deploy/SKILL.md"',
+    'codex_skill_marker="$workspace_dir/.codex/skills/brain-github-deploy/SKILL.md"',
     'if [ ! -f "$agent_skill_marker" ] && [ ! -f "$codex_skill_marker" ]; then',
     '  cd "$workspace_dir"',
     `  ${DEVBOX_SEAKILLS_INSTALL_COMMAND}`,
     '  installed_codex_skill=1',
+    'fi',
+    '# Verify that the required skill was successfully installed',
+    'if [ ! -f "$agent_skill_marker" ] && [ ! -f "$codex_skill_marker" ]; then',
+    "  printf 'ERROR: brain-github-deploy skill not found after install\\n' >&2",
+    '  exit 1',
     'fi',
     'printf \'%s\\n\' "__CODEX_SKILL_INSTALLED__:$installed_codex_skill"',
   )
