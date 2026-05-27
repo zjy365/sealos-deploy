@@ -7,6 +7,9 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 1800
 
+// Only GitHub HTTPS URLs are accepted: https://github.com/{owner}/{repo}[.git]
+const GITHUB_REPO_URL_PATTERN = /^https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+(\.git)?$/
+
 export async function POST(req: NextRequest) {
   let body: Record<string, unknown>
 
@@ -35,11 +38,12 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: 'repoUrl is required' }, { status: 400 })
   }
 
-  // Validate URL format early
-  try {
-    new URL(repoUrl)
-  } catch {
-    return Response.json({ error: 'repoUrl must be a valid URL' }, { status: 400 })
+  // Restrict to GitHub HTTPS URLs only: other hosts would not be cloned with the provided token
+  if (!GITHUB_REPO_URL_PATTERN.test(repoUrl.trim())) {
+    return Response.json(
+      { error: 'repoUrl must be a GitHub repository URL (https://github.com/{owner}/{repo})' },
+      { status: 400 },
+    )
   }
 
   // Authenticate via kubeconfig before establishing SSE stream
@@ -52,12 +56,19 @@ export async function POST(req: NextRequest) {
   const encoder = new TextEncoder()
   let streamController: ReadableStreamDefaultController<Uint8Array> | null = null
 
+  // Single abort controller driven by both stream cancellation and request disconnection
+  const abortController = new AbortController()
+
+  // Propagate request-level disconnect signal
+  req.signal.addEventListener('abort', () => abortController.abort(), { once: true })
+
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
       streamController = controller
     },
     cancel() {
       console.info('Deploy API: SSE stream cancelled by client')
+      abortController.abort()
     },
   })
 
@@ -76,9 +87,10 @@ export async function POST(req: NextRequest) {
   runDeployOrchestration(
     {
       githubToken,
-      repoUrl,
+      repoUrl: repoUrl.trim(),
       branch: resolvedBranch,
       gatewayConfig: authResult.gatewayConfig,
+      signal: abortController.signal,
     },
     sendEvent,
   ).finally(() => {

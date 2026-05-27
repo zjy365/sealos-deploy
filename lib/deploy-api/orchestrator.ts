@@ -4,6 +4,7 @@ import {
   createCodexGatewaySession,
   deleteCodexGatewaySession,
   getCodexGatewaySessionState,
+  interruptCodexGatewayTurn,
   sendCodexGatewayTurn,
   waitForCodexGatewayReady,
 } from '@/lib/codex-gateway/client'
@@ -18,7 +19,7 @@ import type { GatewayConfig } from '@/lib/api-keys/user-keys'
 import type { CodexGatewaySummaryEvent } from '@/lib/codex-gateway/types'
 import { buildDeployPrompt } from './prompt'
 import { extractDeployResult } from './result-parser'
-import type { DeployPhase, SendEventFn } from './types'
+import { DeployError, type DeployErrorCode, type DeployPhase, type SendEventFn } from './types'
 
 const DEPLOY_POLL_INTERVAL_MS = 3_000
 const DEPLOY_TIMEOUT_MS = 30 * 60 * 1_000 // 30 minutes
@@ -101,6 +102,7 @@ export interface DeployOrchestrationInput {
   repoUrl: string
   branch: string
   gatewayConfig: GatewayConfig
+  signal: AbortSignal
 }
 
 export async function runDeployOrchestration(input: DeployOrchestrationInput, sendEvent: SendEventFn): Promise<void> {
@@ -108,11 +110,20 @@ export async function runDeployOrchestration(input: DeployOrchestrationInput, se
   const runtimeName = createTaskDevboxName(fakeTask.id)
   let gatewayUrl: string | null = null
   let sessionId: string | null = null
+  let gatewayAuthToken: string | null = null
+  let currentPhase: DeployPhase = 'provisioning'
+
+  const throwIfAborted = (phase: DeployPhase) => {
+    if (input.signal.aborted) {
+      throw new DeployError('aborted', phase, 'Deployment aborted by client')
+    }
+  }
 
   try {
     // Phase 1: Provision Devbox runtime
     // Note: ensureTaskDevboxRuntime internally does db.update(tasks) which is a silent no-op
     // since fakeTask.id does not exist in the database.
+    throwIfAborted('provisioning')
     sendEvent('progress', { phase: 'provisioning' as DeployPhase, message: 'Creating runtime' })
     const runtime = await ensureTaskDevboxRuntime(fakeTask, {
       githubToken: input.githubToken,
@@ -121,14 +132,16 @@ export async function runDeployOrchestration(input: DeployOrchestrationInput, se
 
     gatewayUrl = runtime.gatewayUrl
     if (!gatewayUrl) {
-      throw new Error('Gateway URL not available after runtime creation')
+      throw new DeployError('runtime_failed', 'provisioning', 'Gateway URL not available after runtime creation')
     }
 
     // Phase 2: Start Codex Gateway session
+    currentPhase = 'starting_ai'
+    throwIfAborted('starting_ai')
     sendEvent('progress', { phase: 'starting_ai' as DeployPhase, message: 'Starting AI session' })
 
     const devboxInfo = await getDevbox(runtimeName)
-    const gatewayAuthToken = await getCodexGatewayAuthToken(devboxInfo.data)
+    gatewayAuthToken = await getCodexGatewayAuthToken(devboxInfo.data)
 
     await waitForCodexGatewayReady(gatewayUrl)
 
@@ -136,6 +149,8 @@ export async function runDeployOrchestration(input: DeployOrchestrationInput, se
     sessionId = session.sessionId
 
     // Phase 3: Send deploy prompt with Sealos context
+    currentPhase = 'analyzing'
+    throwIfAborted('analyzing')
     const prompt = buildDeployPrompt(runtime.namespace)
     await sendCodexGatewayTurn(gatewayUrl, sessionId, { prompt }, gatewayAuthToken)
 
@@ -145,6 +160,14 @@ export async function runDeployOrchestration(input: DeployOrchestrationInput, se
     const deadline = Date.now() + DEPLOY_TIMEOUT_MS
 
     while (Date.now() < deadline) {
+      // Check abort before sleeping for fast response to client disconnect
+      if (input.signal.aborted) {
+        if (gatewayUrl && sessionId) {
+          await interruptCodexGatewayTurn(gatewayUrl, sessionId, gatewayAuthToken).catch(() => {})
+        }
+        throw new DeployError('aborted', currentPhase, 'Deployment aborted by client')
+      }
+
       await sleep(DEPLOY_POLL_INTERVAL_MS)
 
       const state = await getCodexGatewaySessionState(gatewayUrl, sessionId, gatewayAuthToken)
@@ -156,39 +179,50 @@ export async function runDeployOrchestration(input: DeployOrchestrationInput, se
           state.state.lastTurnStatus === 'interrupted'
 
         if (!succeeded) {
-          throw new Error('AI deployment turn failed')
+          throw new DeployError('ai_failed', currentPhase, 'AI deployment turn failed')
         }
         break
       }
 
-      const phase = inferPhaseFromEvents(state.state.recentEvents)
-      sendEvent('progress', { phase, message: 'AI working' })
+      currentPhase = inferPhaseFromEvents(state.state.recentEvents)
+      sendEvent('progress', { phase: currentPhase, message: 'AI working' })
     }
 
     if (Date.now() >= deadline) {
-      throw new Error('Deployment timed out')
+      throw new DeployError('timeout', currentPhase, 'Deployment timed out')
     }
 
     // Phase 5: Extract artifacts from Devbox filesystem
+    currentPhase = 'generating_yaml'
     sendEvent('progress', { phase: 'generating_yaml' as DeployPhase, message: 'Extracting deployment artifacts' })
     const result = await extractDeployResult(runtimeName)
 
     sendEvent('complete', result)
   } catch (error) {
     console.error('Deploy orchestration error:', error)
-    sendEvent('error', { message: 'Deployment failed' })
+
+    const code: DeployErrorCode = error instanceof DeployError ? error.code : 'internal_error'
+    const phase: DeployPhase | undefined = error instanceof DeployError ? error.phase : currentPhase
+
+    sendEvent('error', { code, phase, message: 'Deployment failed' })
   } finally {
     // Always clean up: session first, then Devbox
+    // Both are awaited to ensure cleanup completes before the SSE stream closes
     if (gatewayUrl && sessionId) {
       try {
-        const devboxInfo = await getDevbox(runtimeName).catch(() => null)
-        const authToken = devboxInfo ? await getCodexGatewayAuthToken(devboxInfo.data) : null
-        await deleteCodexGatewaySession(gatewayUrl, sessionId, authToken).catch(() => {})
+        // Re-fetch auth token in case it expired
+        const devboxInfoForCleanup = await getDevbox(runtimeName).catch(() => null)
+        const authTokenForCleanup = devboxInfoForCleanup
+          ? await getCodexGatewayAuthToken(devboxInfoForCleanup.data)
+          : gatewayAuthToken
+        await deleteCodexGatewaySession(gatewayUrl, sessionId, authTokenForCleanup).catch(() => {})
       } catch {
-        // ignore cleanup errors
+        // ignore session cleanup errors
       }
     }
 
-    deleteDevbox(runtimeName).catch(() => {})
+    await deleteDevbox(runtimeName).catch(() => {
+      console.error('Deploy API: Devbox cleanup failed')
+    })
   }
 }

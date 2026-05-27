@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { execDevbox } from '@/lib/devbox/client'
+import { DeployError } from './types'
 
 export interface DeployResult {
   image: string
@@ -35,27 +36,27 @@ export async function extractDeployResult(runtimeName: string): Promise<DeployRe
 
   const outputText = outputExec.data.stdout?.trim()
   if (!outputText) {
-    throw new Error('No deployment output found')
+    throw new DeployError('result_missing', 'generating_yaml', 'No deployment output found')
   }
 
   let deploymentOutput: { status: string; image: string | null; error?: string | null }
   try {
     deploymentOutput = JSON.parse(outputText)
   } catch {
-    throw new Error('Invalid deployment output JSON')
+    throw new DeployError('result_missing', 'generating_yaml', 'Invalid deployment output JSON')
   }
 
   if (deploymentOutput.status !== 'succeeded') {
-    throw new Error(deploymentOutput.error || 'Deployment did not succeed')
+    throw new DeployError('build_failed', 'building', deploymentOutput.error || 'Deployment did not succeed')
   }
 
   if (!deploymentOutput.image) {
-    throw new Error('Deployment output missing image reference')
+    throw new DeployError('result_missing', 'generating_yaml', 'Deployment output missing image reference')
   }
 
   const yamlText = yamlExec.data.stdout?.trim()
   if (!yamlText) {
-    throw new Error('No Crossplane AP YAML found')
+    throw new DeployError('result_missing', 'generating_yaml', 'No Crossplane AP YAML found')
   }
 
   return {
