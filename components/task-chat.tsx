@@ -50,15 +50,8 @@ interface CheckRun {
   completed_at: string | null
 }
 
-interface DeploymentInfo {
-  hasDeployment: boolean
-  previewUrl?: string
-  message?: string
-  createdAt?: string
-}
-
 export function TaskChat({ taskId, task, chatOnly = false }: TaskChatProps) {
-  const [activeTab, setActiveTab] = useState<'chat' | 'comments' | 'actions' | 'deployments'>('chat')
+  const [activeTab, setActiveTab] = useState<'chat' | 'comments' | 'actions'>('chat')
   const [newMessage, setNewMessage] = useAtom(taskChatInputAtomFamily(taskId))
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
   const [prComments, setPrComments] = useState<PRComment[]>([])
@@ -67,12 +60,8 @@ export function TaskChat({ taskId, task, chatOnly = false }: TaskChatProps) {
   const [checkRuns, setCheckRuns] = useState<CheckRun[]>([])
   const [loadingActions, setLoadingActions] = useState(false)
   const [actionsError, setActionsError] = useState<string | null>(null)
-  const [deployment, setDeployment] = useState<DeploymentInfo | null>(null)
-  const [loadingDeployment, setLoadingDeployment] = useState(false)
-  const [deploymentError, setDeploymentError] = useState<string | null>(null)
   const commentsLoadedRef = useRef(false)
   const actionsLoadedRef = useRef(false)
-  const deploymentLoadedRef = useRef(false)
 
   const {
     activityItems,
@@ -177,46 +166,6 @@ export function TaskChat({ taskId, task, chatOnly = false }: TaskChatProps) {
     [task.branchName, task.repoUrl, taskId],
   )
 
-  const fetchDeployment = useCallback(
-    async (showLoading = true) => {
-      if (deploymentLoadedRef.current && showLoading) {
-        return
-      }
-
-      if (showLoading) {
-        setLoadingDeployment(true)
-      }
-
-      setDeploymentError(null)
-
-      try {
-        const response = await fetch(`/api/tasks/${taskId}/deployment`, {
-          cache: 'no-store',
-        })
-        const data = (await response.json()) as {
-          success?: boolean
-          data?: DeploymentInfo
-          error?: string
-        }
-
-        if (!response.ok || !data.success) {
-          setDeploymentError(data.error || 'Failed to fetch deployment')
-          return
-        }
-
-        setDeployment(data.data || null)
-        deploymentLoadedRef.current = true
-      } catch {
-        setDeploymentError('Failed to fetch deployment')
-      } finally {
-        if (showLoading) {
-          setLoadingDeployment(false)
-        }
-      }
-    },
-    [taskId],
-  )
-
   const handleSendMessage = useCallback(async () => {
     const messageToSend = newMessage.trim()
     if (!messageToSend || isSending) {
@@ -285,12 +234,8 @@ export function TaskChat({ taskId, task, chatOnly = false }: TaskChatProps) {
         actionsLoadedRef.current = false
         void fetchCheckRuns(true)
         break
-      case 'deployments':
-        deploymentLoadedRef.current = false
-        void fetchDeployment(true)
-        break
     }
-  }, [activeTab, fetchCheckRuns, fetchDeployment, fetchPRComments, refreshMessages])
+  }, [activeTab, fetchCheckRuns, fetchPRComments, refreshMessages])
 
   useEffect(() => {
     if (activeTab === 'comments' && task.prNumber) {
@@ -303,12 +248,6 @@ export function TaskChat({ taskId, task, chatOnly = false }: TaskChatProps) {
       void fetchCheckRuns(true)
     }
   }, [activeTab, fetchCheckRuns, task.branchName])
-
-  useEffect(() => {
-    if (activeTab === 'deployments') {
-      void fetchDeployment(true)
-    }
-  }, [activeTab, fetchDeployment])
 
   useEffect(() => {
     if (task.prNumber) {
@@ -343,66 +282,13 @@ export function TaskChat({ taskId, task, chatOnly = false }: TaskChatProps) {
           actionsLoadedRef.current = false
           void fetchCheckRuns(false)
           break
-        case 'deployments':
-          deploymentLoadedRef.current = false
-          void fetchDeployment(false)
-          break
       }
     }, 30_000)
 
     return () => {
       window.clearInterval(interval)
     }
-  }, [activeTab, fetchCheckRuns, fetchDeployment, fetchPRComments])
-
-  const renderDeployments = () => {
-    if (loadingDeployment) {
-      return (
-        <div className="flex h-full items-center justify-center">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        </div>
-      )
-    }
-
-    if (deploymentError) {
-      return (
-        <div className="flex h-full items-center justify-center">
-          <p className="text-center text-sm text-destructive">{deploymentError}</p>
-        </div>
-      )
-    }
-
-    if (!deployment?.hasDeployment) {
-      return (
-        <div className="flex h-full items-center justify-center px-4 text-center text-muted-foreground">
-          <div className="text-sm md:text-base">{deployment?.message || 'No deployment found'}</div>
-        </div>
-      )
-    }
-
-    return (
-      <div className="space-y-2 px-2">
-        <a
-          href={deployment.previewUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-3 rounded-xl border p-3 transition-colors hover:bg-muted/50"
-        >
-          <svg className="h-4 w-4 flex-shrink-0" viewBox="0 0 76 65" fill="currentColor">
-            <path d="M37.5274 0L75.0548 65H0L37.5274 0Z" />
-          </svg>
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-medium">Sealos Preview</div>
-            <div className="text-xs text-muted-foreground">
-              {deployment.createdAt
-                ? `Deployed ${new Date(deployment.createdAt).toLocaleString()}`
-                : 'Preview deployment'}
-            </div>
-          </div>
-        </a>
-      </div>
-    )
-  }
+  }, [activeTab, fetchCheckRuns, fetchPRComments])
 
   const renderActions = () => {
     const getStatusIcon = (statusValue: string, conclusion: string | null) => {
@@ -600,7 +486,7 @@ export function TaskChat({ taskId, task, chatOnly = false }: TaskChatProps) {
       {!chatOnly ? (
         <div className="flex h-[46px] flex-shrink-0 items-center justify-between gap-1 overflow-x-auto border-b px-3 py-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           <div className="flex items-center gap-1">
-            {(['chat', 'comments', 'actions', 'deployments'] as const).map((tab) => (
+            {(['chat', 'comments', 'actions'] as const).map((tab) => (
               <button
                 key={tab}
                 type="button"
@@ -623,7 +509,6 @@ export function TaskChat({ taskId, task, chatOnly = false }: TaskChatProps) {
         {activeTab === 'chat' ? renderChat() : null}
         {activeTab === 'comments' ? <div className="flex-1 overflow-y-auto pb-4">{renderComments()}</div> : null}
         {activeTab === 'actions' ? <div className="flex-1 overflow-y-auto pb-4">{renderActions()}</div> : null}
-        {activeTab === 'deployments' ? <div className="flex-1 overflow-y-auto pb-4">{renderDeployments()}</div> : null}
       </div>
 
       {activeTab === 'chat' ? (

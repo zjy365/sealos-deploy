@@ -23,6 +23,10 @@ export function getAppBaseUrl(req: NextRequest): string {
   return trimTrailingSlash(req.nextUrl.origin)
 }
 
+export function getProviderCallbackUrl(req: NextRequest, provider: 'github'): string {
+  return `${getAppBaseUrl(req)}/api/auth/callback/${provider}`
+}
+
 export function getGitHubClientId(): string {
   return process.env.GITHUB_CLIENT_ID || ''
 }

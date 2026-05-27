@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserApiKey } from '@/lib/api-keys/user-keys'
 
-type Provider = 'openai' | 'gemini' | 'cursor' | 'anthropic' | 'aigateway' | 'aiproxy'
+type Provider = 'openai' | 'gemini' | 'cursor' | 'anthropic' | 'aiproxy'
 
 // Map agents to their required providers
 const AGENT_PROVIDER_MAP: Record<string, Provider | null> = {
-  claude: 'aigateway', // Claude uses Vercel AI Gateway
-  codex: 'aigateway', // Codex uses Vercel AI Gateway
+  claude: 'aiproxy',
+  codex: 'aiproxy',
   copilot: null, // Copilot uses user's GitHub token from their account
   cursor: 'cursor',
   gemini: 'gemini',
@@ -64,13 +64,12 @@ export async function GET(req: NextRequest) {
     }
 
     if (agent === 'claude' || agent === 'codex') {
-      const [aiGatewayKey, aiProxyKey] = await Promise.all([getUserApiKey('aigateway'), getUserApiKey('aiproxy')])
-      const resolvedProvider = aiGatewayKey ? 'aigateway' : aiProxyKey ? 'aiproxy' : 'aigateway'
+      const aiProxyKey = await getUserApiKey('aiproxy')
 
       return NextResponse.json({
         success: true,
-        hasKey: !!(aiGatewayKey || aiProxyKey),
-        provider: resolvedProvider,
+        hasKey: !!aiProxyKey,
+        provider: 'aiproxy',
         agentName: agent.charAt(0).toUpperCase() + agent.slice(1),
       })
     }
@@ -82,8 +81,7 @@ export async function GET(req: NextRequest) {
       } else if (isGeminiModel(model)) {
         provider = 'gemini'
       } else if (isOpenAIModel(model)) {
-        // For OpenAI models, prefer AI Gateway if available, otherwise use OpenAI
-        provider = 'aigateway'
+        provider = 'openai'
       }
       // For cursor with no recognizable pattern, keep the default 'cursor' provider
     }

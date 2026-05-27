@@ -7,8 +7,6 @@ import { AppLayoutWrapper } from '@/components/app-layout-wrapper'
 import { SessionProvider } from '@/components/auth/session-provider'
 import { SealosBootstrap } from '@/components/sealos-bootstrap'
 import { JotaiProvider } from '@/components/providers/jotai-provider'
-import { Analytics } from '@vercel/analytics/react'
-import { SpeedInsights } from '@vercel/speed-insights/next'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -47,8 +45,6 @@ export default function RootLayout({
             <Toaster />
           </ThemeProvider>
         </JotaiProvider>
-        <Analytics />
-        <SpeedInsights />
       </body>
     </html>
   )

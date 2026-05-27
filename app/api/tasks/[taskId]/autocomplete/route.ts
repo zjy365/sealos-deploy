@@ -35,7 +35,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       if (pathPart.startsWith('/')) {
         dir = pathPart
       } else if (pathPart.startsWith('~/')) {
-        dir = `/home/vercel-sandbox/${pathPart.substring(2)}`
+        dir = pathPart
       } else {
         dir = `${cwd || '.'}/${pathPart}`
       }

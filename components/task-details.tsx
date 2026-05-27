@@ -88,7 +88,6 @@ import LinearIcon from '@/components/icons/linear-icon'
 import NotionIcon from '@/components/icons/notion-icon'
 import PlaywrightIcon from '@/components/icons/playwright-icon'
 import SupabaseIcon from '@/components/icons/supabase-icon'
-import VercelIcon from '@/components/icons/vercel-icon'
 import { PRStatusIcon } from '@/components/pr-status-icon'
 import { ensureAiProxyProvisioned } from '@/lib/aiproxy/client-provisioning'
 
@@ -125,8 +124,6 @@ export function TaskDetails({ task, maxSandboxDuration = 300 }: TaskDetailsProps
   const [tryAgainMaxDuration, setTryAgainMaxDuration] = useState(task.maxDuration || maxSandboxDuration)
   const [tryAgainKeepAlive, setTryAgainKeepAlive] = useState(task.keepAlive || false)
   const [tryAgainEnableBrowser, setTryAgainEnableBrowser] = useState(task.enableBrowser || false)
-  const [deploymentUrl, setDeploymentUrl] = useState<string | null>(task.previewUrl || null)
-  const [loadingDeployment, setLoadingDeployment] = useState(false)
   const [showPRDialog, setShowPRDialog] = useState(false)
   const [showMergePRDialog, setShowMergePRDialog] = useState(false)
   const [prUrl, setPrUrl] = useState<string | null>(task.prUrl || null)
@@ -721,41 +718,6 @@ export function TaskDetails({ task, maxSandboxDuration = 300 }: TaskDetailsProps
     // Use JSON.stringify to create stable dependency - only re-run when IDs actually change
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(task.mcpServerIds)])
-
-  // Fetch deployment info when task is completed and has a branch (only if not already cached)
-  useEffect(() => {
-    async function fetchDeployment() {
-      // Skip if we already have a preview URL or task isn't ready
-      if (deploymentUrl || currentStatus !== 'completed' || !task.branchName) {
-        return
-      }
-
-      setLoadingDeployment(true)
-
-      try {
-        const response = await fetch(`/api/tasks/${task.id}/deployment`)
-        if (response.ok) {
-          const result = await response.json()
-          if (result.success && result.data.hasDeployment && result.data.previewUrl) {
-            setDeploymentUrl(result.data.previewUrl)
-          }
-        }
-      } catch (error) {
-        console.error('Failed to fetch deployment info:', error)
-      } finally {
-        setLoadingDeployment(false)
-      }
-    }
-
-    fetchDeployment()
-  }, [task.id, task.branchName, currentStatus, deploymentUrl])
-
-  // Update deploymentUrl when task.previewUrl changes
-  useEffect(() => {
-    if (task.previewUrl && task.previewUrl !== deploymentUrl) {
-      setDeploymentUrl(task.previewUrl)
-    }
-  }, [task.previewUrl, deploymentUrl])
 
   // Update prUrl, prNumber, and prStatus when task values change
   useEffect(() => {

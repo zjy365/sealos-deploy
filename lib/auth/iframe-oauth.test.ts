@@ -27,7 +27,7 @@ test('auth cookie policy supports HTTPS iframe development hosts', async () => {
   assert.equal(policy.getAuthCookieSameSiteHeader({ isHttps: true, nodeEnv: 'development' }), 'None')
 })
 
-test('auth cookie policy supports localhost iframe development hosts', async () => {
+test('auth cookie policy supports localhost OAuth development hosts', async () => {
   const policy = await import('./cookie-policy')
   const requestPolicy = policy.getAuthCookiePolicyFromRequest({
     headers: {
@@ -41,9 +41,9 @@ test('auth cookie policy supports localhost iframe development hosts', async () 
     },
   })
 
-  assert.equal(policy.getAuthCookieSameSite(requestPolicy), 'none')
-  assert.equal(policy.getAuthCookieSecure(requestPolicy), true)
-  assert.equal(policy.getAuthCookieSameSiteHeader(requestPolicy), 'None')
+  assert.equal(policy.getAuthCookieSameSite(requestPolicy), 'lax')
+  assert.equal(policy.getAuthCookieSecure(requestPolicy), false)
+  assert.equal(policy.getAuthCookieSameSiteHeader(requestPolicy), 'Lax')
 })
 
 test('public GitHub sign-in route preserves sign-in intent inside iframes', () => {
@@ -55,17 +55,31 @@ test('public GitHub sign-in route preserves sign-in intent inside iframes', () =
 })
 
 test('GitHub callback notifies embedded opener frames before closing popup', () => {
-  const source = readRepoFile('app/api/auth/github/callback/route.ts')
+  const source = readRepoFile('app/api/auth/callback/github/route.ts')
 
   assert.match(source, /postGitHubAuthMessage\(window\.opener\)/)
   assert.match(source, /postGitHubAuthMessage\(window\.opener\.frames\[index\]\)/)
   assert.match(source, /window\.setTimeout\(\(\) => window\.close\(\),/)
 })
 
+test('GitHub sign-in uses provider callback route convention', () => {
+  const source = readRepoFile('app/api/auth/signin/github/route.ts')
+
+  assert.match(source, /getProviderCallbackUrl\(req, 'github'\)/)
+  assert.doesNotMatch(source, /\/api\/auth\/github\/callback/)
+})
+
 test('GitHub popup verifies auth state if the iframe misses the callback message', () => {
   const source = readRepoFile('lib/auth/github-popup.ts')
 
   assert.match(source, /fetch\('\/api\/auth\/info'/)
+  assert.match(source, /authStatePoll = window\.setInterval/)
   assert.match(source, /completeFromAuthStateOrError\('popup_closed'\)/)
   assert.doesNotMatch(source, /if \(popup\.closed\) {\s*complete\('popup_closed'\)/)
+})
+
+test('GitHub OAuth scopes include package access for GHCR image publishing', () => {
+  const source = readRepoFile('lib/auth/oauth.ts')
+
+  assert.match(source, /GITHUB_OAUTH_SCOPES = \['repo', 'read:user', 'user:email', 'read:packages', 'write:packages'\]/)
 })

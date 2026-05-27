@@ -71,7 +71,7 @@ export function getAuthCookiePolicyFromRequest(req: AuthCookieRequest): AuthCook
 
 export function getAuthCookieSecure(input?: AuthCookiePolicyInput): boolean {
   const options = normalizeAuthCookiePolicyInput(input)
-  return options.nodeEnv === 'production' || options.isHttps || options.isLocalhost
+  return options.nodeEnv === 'production' || options.isHttps
 }
 
 export function getAuthCookieSameSite(input?: AuthCookiePolicyInput): AuthCookieSameSite {

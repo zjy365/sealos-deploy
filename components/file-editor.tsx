@@ -230,7 +230,7 @@ export function FileEditor({
   // - Jump to definition in node_modules
   // - Complete IntelliSense without loading hundreds of files into the browser
   const loadProjectFiles = useCallback(async () => {
-    console.log('[Load Project Files] Skipping - using sandbox-based LSP instead')
+    console.log('[Load Project Files] Skipping - using runtime LSP instead')
     // The LSP endpoint will handle all type resolution on demand
   }, [])
 
@@ -238,8 +238,7 @@ export function FileEditor({
   const handleBeforeMount = useCallback((monaco: Monaco) => {
     console.log('[Editor Before Mount] Defining themes...')
 
-    // Define Vercel/Geist dark theme (matching ray-so)
-    monaco.editor.defineTheme('vercel-dark', {
+    monaco.editor.defineTheme('shiprepo-dark', {
       base: 'vs-dark',
       inherit: true,
       rules: [
@@ -284,8 +283,7 @@ export function FileEditor({
       },
     })
 
-    // Define Vercel/Geist light theme (matching ray-so)
-    monaco.editor.defineTheme('vercel-light', {
+    monaco.editor.defineTheme('shiprepo-light', {
       base: 'vs',
       inherit: true,
       rules: [
@@ -598,10 +596,8 @@ export function FileEditor({
 
         // Check if the definition is in a different file
         if (targetUri !== currentUri) {
-          // Extract the file path from the URI and strip sandbox prefix
+          // Extract the file path from the URI.
           let filePath = targetUri.replace('file://', '')
-          // Remove /vercel/sandbox prefix if present (from sandbox LSP)
-          filePath = filePath.replace(/^\/vercel\/sandbox/, '')
           console.log('[F12] Opening file in new tab:', filePath)
 
           // Open in a new tab
@@ -658,10 +654,8 @@ export function FileEditor({
         })
 
         if (targetUri !== currentUri) {
-          // Extract the file path from the URI and strip sandbox prefix
+          // Extract the file path from the URI.
           let filePath = targetUri.replace('file://', '')
-          // Remove /vercel/sandbox prefix if present (from sandbox LSP)
-          filePath = filePath.replace(/^\/vercel\/sandbox/, '')
           console.log('[Mouse Click] Opening file in new tab:', filePath)
           if (onOpenFileRef.current) {
             onOpenFileRef.current(filePath, definition.range.startLineNumber)
@@ -729,7 +723,7 @@ export function FileEditor({
         onChange={handleContentChange}
         beforeMount={handleBeforeMount}
         onMount={handleEditorMount}
-        theme={currentTheme === 'dark' ? 'vercel-dark' : 'vercel-light'}
+        theme={currentTheme === 'dark' ? 'shiprepo-dark' : 'shiprepo-light'}
         options={{
           readOnly: isReadOnly,
           minimap: { enabled: false },

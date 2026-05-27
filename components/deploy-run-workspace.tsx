@@ -48,6 +48,13 @@ interface DeployStage {
   state: StageState
 }
 
+interface BlockingItem {
+  detail: string
+  id: string
+  label: string
+  tone: 'error' | 'warning'
+}
+
 function getTaskRuntime(task: Task): number {
   const startTime = new Date(task.createdAt).getTime()
   const endTime = task.completedAt ? new Date(task.completedAt).getTime() : Date.now()
@@ -317,6 +324,49 @@ function getActivityIcon(tone: TaskAgentActivityItem['tone']) {
   return <Bot className="h-4 w-4 text-primary" />
 }
 
+function getBlockingItems(task: Task, activityItems: TaskAgentActivityItem[]): BlockingItem[] {
+  const blockingItems: BlockingItem[] = []
+
+  if (task.status === 'error') {
+    blockingItems.push({
+      id: 'task-error',
+      label: 'Run failed',
+      detail: task.error || 'Review the latest activity, then ask ShipRepo to retry or fix the failing step.',
+      tone: 'error',
+    })
+  }
+
+  for (const item of activityItems.slice(-8)) {
+    const text = `${item.label} ${item.detail}`.toLowerCase()
+    const isBlockingSignal =
+      item.tone === 'warning' ||
+      item.tone === 'error' ||
+      text.includes('env') ||
+      text.includes('environment') ||
+      text.includes('approval') ||
+      text.includes('failed')
+
+    if (!isBlockingSignal) {
+      continue
+    }
+
+    blockingItems.push({
+      id: item.id,
+      label: item.label,
+      detail: item.detail,
+      tone: item.tone === 'error' ? 'error' : 'warning',
+    })
+  }
+
+  const uniqueItems = new Map<string, BlockingItem>()
+
+  for (const item of blockingItems) {
+    uniqueItems.set(`${item.label}:${item.detail}`, item)
+  }
+
+  return Array.from(uniqueItems.values()).slice(0, 3)
+}
+
 function useTaskEvents(task: Task) {
   const [events, setEvents] = useState<TaskEvent[]>([])
   const [pollTick, setPollTick] = useState(0)
@@ -383,8 +433,10 @@ export function DeployRunWorkspace({ task }: DeployRunWorkspaceProps) {
   const progressValue = Math.max(0, Math.min(task.progress || getStageIndex(task, activityItems) * 15, 100))
   const runtimeMs = clockTick >= 0 ? getTaskRuntime(task) : 0
   const recentActivities = [...activityItems].slice(-5).toReversed()
+  const blockingItems = getBlockingItems(task, activityItems)
   const hasResult = Boolean(task.previewUrl || task.prUrl || task.sandboxUrl)
-  const needsAttention = task.status === 'error' || stages.some((stage) => stage.state === 'blocked')
+  const needsAttention =
+    task.status === 'error' || stages.some((stage) => stage.state === 'blocked') || blockingItems.length > 0
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-4">
@@ -446,6 +498,27 @@ export function DeployRunWorkspace({ task }: DeployRunWorkspaceProps) {
             {task.status === 'error' ? (
               <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-950 dark:bg-red-950/20 dark:text-red-300">
                 {task.error || 'Deployment run failed'}
+              </div>
+            ) : null}
+
+            {blockingItems.length > 0 ? (
+              <div className="space-y-2 rounded-md border border-amber-200 bg-amber-50/70 px-3 py-2 dark:border-amber-950 dark:bg-amber-950/20">
+                <div className="text-xs font-medium text-amber-800 dark:text-amber-300">Blocking inputs</div>
+                <div className="space-y-2">
+                  {blockingItems.map((item) => (
+                    <div key={item.id} className="flex gap-2 text-sm">
+                      {item.tone === 'error' ? (
+                        <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500" />
+                      ) : (
+                        <ShieldAlert className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-500" />
+                      )}
+                      <div className="min-w-0">
+                        <div className="font-medium text-foreground">{item.label}</div>
+                        <div className="line-clamp-2 text-xs text-muted-foreground">{item.detail}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : null}
 

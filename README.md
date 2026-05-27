@@ -85,7 +85,7 @@ JWE_SECRET=
 ENCRYPTION_KEY=
 GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
-AI_GATEWAY_API_KEY=
+AIPROXY_API_KEY=
 ```
 
 Optional:
@@ -109,7 +109,7 @@ pnpm db:migrate
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000), sign in with GitHub, choose a repository, and start a Sealos lifecycle task.
+Open [http://localhost:3100](http://localhost:3100), sign in with GitHub, choose a repository, and start a Sealos lifecycle task.
 
 ## Project Structure
 
