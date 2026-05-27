@@ -83,22 +83,41 @@ export async function POST(request: NextRequest) {
 
     after(async () => {
       try {
+        if (!process.env.AI_GATEWAY_API_KEY) {
+          return
+        }
+
         const logger = createTaskLogger(taskId)
-        const branchName = await generateBranchName({
+        await logger.info('Generating AI-powered branch name...')
+
+        let repoName: string | undefined
+        try {
+          const url = new URL(validatedData.repoUrl || '')
+          const pathParts = url.pathname.split('/')
+          if (pathParts.length >= 3) {
+            repoName = pathParts[pathParts.length - 1].replace(/\.git$/, '')
+          }
+        } catch {
+          // Ignore URL parsing errors
+        }
+
+        const aiBranchName = await generateBranchName({
           description: validatedData.prompt,
+          repoName,
+          context: `${validatedData.selectedAgent} agent task`,
         })
 
         await db
           .update(tasks)
           .set({
-            branchName,
+            branchName: aiBranchName,
             updatedAt: new Date(),
           })
           .where(eq(tasks.id, taskId))
 
-        await logger.info('Generated branch name')
+        await logger.success('Generated AI branch name')
       } catch (error) {
-        console.error('Error generating branch name:', error)
+        console.error('Error generating AI branch name:', error)
 
         const fallbackBranchName = createFallbackBranchName(taskId)
 
@@ -121,19 +140,36 @@ export async function POST(request: NextRequest) {
 
     after(async () => {
       try {
-        const title = await generateTaskTitle({
+        if (!process.env.AI_GATEWAY_API_KEY) {
+          return
+        }
+
+        let repoName: string | undefined
+        try {
+          const url = new URL(validatedData.repoUrl || '')
+          const pathParts = url.pathname.split('/')
+          if (pathParts.length >= 3) {
+            repoName = pathParts[pathParts.length - 1].replace(/\.git$/, '')
+          }
+        } catch {
+          // Ignore URL parsing errors
+        }
+
+        const aiTitle = await generateTaskTitle({
           prompt: validatedData.prompt,
+          repoName,
+          context: `${validatedData.selectedAgent} agent task`,
         })
 
         await db
           .update(tasks)
           .set({
-            title,
+            title: aiTitle,
             updatedAt: new Date(),
           })
           .where(eq(tasks.id, taskId))
       } catch (error) {
-        console.error('Error generating title:', error)
+        console.error('Error generating AI title:', error)
 
         const fallbackTitle = createFallbackTitle(validatedData.prompt)
 

@@ -17,7 +17,7 @@ export const users = pgTable(
     id: text('id').primaryKey(), // Internal user ID (we generate this)
     // Primary OAuth account info (how they signed in)
     provider: text('provider', {
-      enum: ['github'],
+      enum: ['github', 'vercel'],
     }).notNull(), // Primary auth provider
     externalId: text('external_id').notNull(), // External ID from OAuth provider
     accessToken: text('access_token').notNull(), // Encrypted OAuth access token
@@ -40,7 +40,7 @@ export const users = pgTable(
 
 export const insertUserSchema = z.object({
   id: z.string().optional(), // Auto-generated if not provided
-  provider: z.enum(['github']),
+  provider: z.enum(['github', 'vercel']),
   externalId: z.string().min(1, 'External ID is required'),
   accessToken: z.string(),
   refreshToken: z.string().optional(),
@@ -56,7 +56,7 @@ export const insertUserSchema = z.object({
 
 export const selectUserSchema = z.object({
   id: z.string(),
-  provider: z.enum(['github']),
+  provider: z.enum(['github', 'vercel']),
   externalId: z.string(),
   accessToken: z.string(),
   refreshToken: z.string().nullable(),
@@ -368,7 +368,7 @@ export const keys = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }), // Foreign key to users table
     provider: text('provider', {
-      enum: ['anthropic', 'openai', 'cursor', 'gemini', 'aiproxy'],
+      enum: ['anthropic', 'openai', 'cursor', 'gemini', 'aigateway', 'aiproxy'],
     }).notNull(),
     value: text('value').notNull(), // Encrypted API key value
     baseUrl: text('base_url'),
@@ -384,7 +384,7 @@ export const keys = pgTable(
 export const insertKeySchema = z.object({
   id: z.string().optional(),
   userId: z.string(),
-  provider: z.enum(['anthropic', 'openai', 'cursor', 'gemini', 'aiproxy']),
+  provider: z.enum(['anthropic', 'openai', 'cursor', 'gemini', 'aigateway', 'aiproxy']),
   value: z.string().min(1, 'API key value is required'),
   baseUrl: z.string().url().optional(),
   createdAt: z.date().optional(),
@@ -394,7 +394,7 @@ export const insertKeySchema = z.object({
 export const selectKeySchema = z.object({
   id: z.string(),
   userId: z.string(),
-  provider: z.enum(['anthropic', 'openai', 'cursor', 'gemini', 'aiproxy']),
+  provider: z.enum(['anthropic', 'openai', 'cursor', 'gemini', 'aigateway', 'aiproxy']),
   value: z.string(),
   baseUrl: z.string().nullable(),
   createdAt: z.date(),

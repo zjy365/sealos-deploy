@@ -1,7 +1,7 @@
 import { type NextRequest } from 'next/server'
 import { cookies } from 'next/headers'
 import { generateState } from 'arctic'
-import { GITHUB_OAUTH_SCOPE, getAppBaseUrl, getGitHubClientId, getProviderCallbackUrl } from '@/lib/auth/oauth'
+import { GITHUB_OAUTH_SCOPE, getAppBaseUrl, getGitHubClientId } from '@/lib/auth/oauth'
 import { isRelativeUrl } from '@/lib/utils/is-relative-url'
 import { getAuthCookiePolicyFromRequest, getAuthCookieSameSite, getAuthCookieSecure } from '@/lib/auth/cookie-policy'
 import {
@@ -33,7 +33,7 @@ export async function GET(req: NextRequest): Promise<Response> {
   }
 
   const clientId = getGitHubClientId()
-  const redirectUri = getProviderCallbackUrl(req, 'github')
+  const redirectUri = `${getAppBaseUrl(req)}/api/auth/github/callback`
 
   if (!clientId) {
     return Response.redirect(new URL('/?error=github_not_configured', getAppBaseUrl(req)))

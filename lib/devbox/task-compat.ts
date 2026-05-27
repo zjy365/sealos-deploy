@@ -24,6 +24,9 @@ const WORKSPACE_DIR_SCRIPT = [
   'printf "%s\\n" "$workspace_dir"',
 ].join('\n')
 
+const LEGACY_PROJECT_DIR = '/vercel/sandbox/project'
+const LEGACY_HOME_DIR = '/home/vercel-sandbox'
+
 function shellEscape(value: string): string {
   return `'${value.replace(/'/g, `'\\''`)}'`
 }
@@ -56,6 +59,16 @@ function toWorkspacePath(workspaceDir: string, targetPath?: string | null): stri
 
   if (trimmed.startsWith(normalizedWorkspace)) {
     const relative = normalizeRelativePath(trimmed.slice(normalizedWorkspace.length))
+    return relative ? path.posix.join(normalizedWorkspace, relative) : normalizedWorkspace
+  }
+
+  if (trimmed.startsWith(LEGACY_PROJECT_DIR)) {
+    const relative = normalizeRelativePath(trimmed.slice(LEGACY_PROJECT_DIR.length))
+    return relative ? path.posix.join(normalizedWorkspace, relative) : normalizedWorkspace
+  }
+
+  if (trimmed.startsWith(LEGACY_HOME_DIR)) {
+    const relative = normalizeRelativePath(trimmed.slice(LEGACY_HOME_DIR.length))
     return relative ? path.posix.join(normalizedWorkspace, relative) : normalizedWorkspace
   }
 

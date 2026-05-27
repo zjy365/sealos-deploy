@@ -50,7 +50,7 @@ The product is not intended to replace a local IDE or local `localhost:3000` dev
 - shadcn/ui
 - PostgreSQL
 - Drizzle ORM and drizzle-kit
-- AI SDK 6
+- AI SDK 5
 - Codex Gateway
 - Devbox runtime infrastructure
 
@@ -85,7 +85,7 @@ JWE_SECRET=
 ENCRYPTION_KEY=
 GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
-AIPROXY_API_KEY=
+AI_GATEWAY_API_KEY=
 ```
 
 Optional:
@@ -109,7 +109,7 @@ pnpm db:migrate
 pnpm dev
 ```
 
-Open [http://localhost:3100](http://localhost:3100), sign in with GitHub, choose a repository, and start a Sealos lifecycle task.
+Open [http://localhost:3000](http://localhost:3000), sign in with GitHub, choose a repository, and start a Sealos lifecycle task.
 
 ## Project Structure
 
@@ -124,7 +124,9 @@ Open [http://localhost:3100](http://localhost:3100), sign in with GitHub, choose
 
 ## Further Reading
 
-- [spec/current/shiprepo-current-spec.zh.md](spec/current/shiprepo-current-spec.zh.md): current product and technical source of truth
+- [reference/product-overview.zh.md](reference/product-overview.zh.md): product positioning and lifecycle path
+- [reference/architecture.md](reference/architecture.md): request flow, runtime lifecycle, and module boundaries
+- [reference/configuration.md](reference/configuration.md): environment variables, auth setup, migrations, and runtime behavior
 
 ## Development
 

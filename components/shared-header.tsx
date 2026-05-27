@@ -5,7 +5,6 @@ import { Menu } from 'lucide-react'
 import { useTasks } from '@/components/app-layout'
 import { User } from '@/components/auth/user'
 import { GitHubStarsButton } from '@/components/github-stars-button'
-import type { Session } from '@/lib/session/types'
 
 interface SharedHeaderProps {
   leftActions?: React.ReactNode
@@ -13,7 +12,6 @@ interface SharedHeaderProps {
   initialStars?: number
   hideStars?: boolean
   hideUserAction?: boolean
-  user?: Session['user'] | null
 }
 
 export function SharedHeader({
@@ -22,7 +20,6 @@ export function SharedHeader({
   initialStars = 1200,
   hideStars = true,
   hideUserAction = false,
-  user = null,
 }: SharedHeaderProps) {
   const { toggleSidebar } = useTasks()
 
@@ -43,7 +40,7 @@ export function SharedHeader({
 
           {extraActions}
 
-          {!hideUserAction ? <User user={user} /> : null}
+          {!hideUserAction ? <User /> : null}
         </div>
       </div>
     </div>

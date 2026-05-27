@@ -215,14 +215,14 @@ export function SealosHomePageContent({
   return (
     <div className="flex flex-1 flex-col bg-background">
       <div className="p-3">
-        <SharedHeader initialStars={initialStars} hideUserAction={!user} user={user} />
+        <SharedHeader initialStars={initialStars} hideUserAction={!user} />
       </div>
 
       <div className="flex flex-1 items-center justify-center px-4 pb-8">
         <div className="w-full max-w-3xl">
           <div className="mb-7 text-center">
             <div className="sealos-eyebrow">Repo to Sealos App</div>
-            <h1 className="sealos-section-title mt-4 text-foreground sm:text-[2.5rem]">Repo to app</h1>
+            <h1 className="sealos-section-title mt-4 text-foreground sm:text-[2.5rem]">Analyze, preview, ship</h1>
             <p className="sealos-body mx-auto mt-3">{pageDescription}</p>
           </div>
 

@@ -72,16 +72,12 @@ export function startGitHubPopupAuth(authPath: string): Promise<void> {
     let settled = false
     let checkingAuthState = false
     let broadcastChannel: BroadcastChannel | undefined
-    let authStatePoll: number | undefined
     let closePoll: number | undefined
     let timeout: number | undefined
 
     const cleanup = () => {
       window.removeEventListener('message', handleMessage)
       broadcastChannel?.close()
-      if (authStatePoll !== undefined) {
-        window.clearInterval(authStatePoll)
-      }
       if (closePoll !== undefined) {
         window.clearInterval(closePoll)
       }
@@ -120,35 +116,17 @@ export function startGitHubPopupAuth(authPath: string): Promise<void> {
       }
     }
 
-    const completeFromAuthState = async (): Promise<boolean> => {
-      if (settled || checkingAuthState) {
-        return false
-      }
-
-      checkingAuthState = true
-
-      try {
-        if (await hasAuthSession()) {
-          popup.close()
-          complete('success')
-          return true
-        }
-      } finally {
-        checkingAuthState = false
-      }
-
-      return false
-    }
-
     const completeFromAuthStateOrError = async (errorCode: GitHubPopupAuthErrorCode) => {
-      if (settled) {
+      if (settled || checkingAuthState) {
         return
       }
 
+      checkingAuthState = true
       const deadline = Date.now() + AUTH_INFO_TIMEOUT_MS
 
       while (!settled && Date.now() < deadline) {
-        if (await completeFromAuthState()) {
+        if (await hasAuthSession()) {
+          complete('success')
           return
         }
 
@@ -174,10 +152,6 @@ export function startGitHubPopupAuth(authPath: string): Promise<void> {
         handlePopupMessageData(event.data)
       })
     } catch {}
-
-    authStatePoll = window.setInterval(() => {
-      void completeFromAuthState()
-    }, AUTH_INFO_POLL_MS)
 
     closePoll = window.setInterval(() => {
       if (popup.closed) {

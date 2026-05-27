@@ -3,7 +3,7 @@
   "version": "2.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack -p 3100",
+    "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
@@ -17,7 +17,6 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@ai-sdk/react": "3.0.193",
     "@git-diff-view/file": "^0.0.32",
     "@git-diff-view/react": "^0.0.32",
     "@monaco-editor/react": "^4.7.0",
@@ -39,9 +38,10 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@types/js-cookie": "^3.0.6",
     "@types/ws": "^8.18.1",
+    "@vercel/analytics": "^1.6.1",
+    "@vercel/speed-insights": "^1.3.1",
     "@zjy365/sealos-desktop-sdk": "^0.1.20",
-    "ai": "6.0.191",
-    "ai-sdk-provider-codex-app-server": "1.1.7",
+    "ai": "5.0.51",
     "arctic": "^3.7.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -60,7 +60,7 @@
     "react-dom": "19.2.1",
     "shiki": "^3.21.0",
     "sonner": "^2.0.7",
-    "streamdown": "^2.5.0",
+    "streamdown": "^1.6.11",
     "tailwind-merge": "^3.4.0",
     "typescript-language-server": "^5.1.3",
     "vaul": "^1.1.2",

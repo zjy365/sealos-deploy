@@ -124,6 +124,7 @@ async function getAllLocalFiles(task: NonNullable<Awaited<ReturnType<typeof getO
       "-not -path '*/.next/*'",
       "-not -path '*/dist/*'",
       "-not -path '*/build/*'",
+      "-not -path '*/.vercel/*'",
     ].join(' '),
     { timeoutSeconds: 60 },
   )

@@ -7,14 +7,16 @@ import { getServerSession } from '@/lib/session/get-server-session'
 import { decrypt } from '@/lib/crypto'
 import { AIPROXY_MODEL_BASE_URL } from '@/lib/aiproxy/constants'
 
-export type Provider = 'openai' | 'gemini' | 'cursor' | 'anthropic' | 'aiproxy'
-export type GatewayProvider = 'aiproxy'
+export type Provider = 'openai' | 'gemini' | 'cursor' | 'anthropic' | 'aigateway' | 'aiproxy'
+export type GatewayProvider = 'aigateway' | 'aiproxy'
 
 export const GATEWAY_BASE_URLS: Record<GatewayProvider, string> = {
+  aigateway: 'https://ai-gateway.vercel.sh',
   aiproxy: AIPROXY_MODEL_BASE_URL,
 }
 
-export const GATEWAY_ENV_KEYS: Record<GatewayProvider, 'AIPROXY_API_KEY'> = {
+export const GATEWAY_ENV_KEYS: Record<GatewayProvider, 'AI_GATEWAY_API_KEY' | 'AIPROXY_API_KEY'> = {
+  aigateway: 'AI_GATEWAY_API_KEY',
   aiproxy: 'AIPROXY_API_KEY',
 }
 
@@ -22,10 +24,24 @@ export interface GatewayConfig {
   provider: GatewayProvider
   apiKey: string
   baseUrl: string
-  envKey: 'AIPROXY_API_KEY'
+  envKey: 'AI_GATEWAY_API_KEY' | 'AIPROXY_API_KEY'
 }
 
-export function resolveGatewayFromApiKeys(apiKeys?: { AIPROXY_API_KEY?: string; AIPROXY_BASE_URL?: string }) {
+export function resolveGatewayFromApiKeys(apiKeys?: {
+  AI_GATEWAY_API_KEY?: string
+  AIPROXY_API_KEY?: string
+  AIPROXY_BASE_URL?: string
+}) {
+  const aiGatewayKey = apiKeys?.AI_GATEWAY_API_KEY || process.env.AI_GATEWAY_API_KEY
+  if (aiGatewayKey) {
+    return {
+      provider: 'aigateway' as const,
+      apiKey: aiGatewayKey,
+      baseUrl: GATEWAY_BASE_URLS.aigateway,
+      envKey: GATEWAY_ENV_KEYS.aigateway,
+    }
+  }
+
   const aiProxyKey = apiKeys?.AIPROXY_API_KEY || process.env.AIPROXY_API_KEY
   if (aiProxyKey) {
     return {
@@ -40,6 +56,7 @@ export function resolveGatewayFromApiKeys(apiKeys?: { AIPROXY_API_KEY?: string; 
 }
 
 export function resolveCodexGatewayFromApiKeys(apiKeys?: {
+  AI_GATEWAY_API_KEY?: string
   AIPROXY_API_KEY?: string
   AIPROXY_BASE_URL?: string
 }): GatewayConfig | null {
@@ -50,6 +67,16 @@ export function resolveCodexGatewayFromApiKeys(apiKeys?: {
       apiKey: aiProxyKey,
       baseUrl: apiKeys?.AIPROXY_BASE_URL || process.env.AIPROXY_BASE_URL || GATEWAY_BASE_URLS.aiproxy,
       envKey: GATEWAY_ENV_KEYS.aiproxy,
+    }
+  }
+
+  const aiGatewayKey = apiKeys?.AI_GATEWAY_API_KEY || process.env.AI_GATEWAY_API_KEY
+  if (aiGatewayKey) {
+    return {
+      provider: 'aigateway',
+      apiKey: aiGatewayKey,
+      baseUrl: GATEWAY_BASE_URLS.aigateway,
+      envKey: GATEWAY_ENV_KEYS.aigateway,
     }
   }
 
@@ -65,6 +92,7 @@ export async function getUserApiKeys(): Promise<{
   GEMINI_API_KEY: string | undefined
   CURSOR_API_KEY: string | undefined
   ANTHROPIC_API_KEY: string | undefined
+  AI_GATEWAY_API_KEY: string | undefined
   AIPROXY_API_KEY: string | undefined
   AIPROXY_BASE_URL: string | undefined
 }> {
@@ -76,6 +104,7 @@ export async function getUserApiKeys(): Promise<{
     GEMINI_API_KEY: process.env.GEMINI_API_KEY,
     CURSOR_API_KEY: process.env.CURSOR_API_KEY,
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+    AI_GATEWAY_API_KEY: process.env.AI_GATEWAY_API_KEY,
     AIPROXY_API_KEY: process.env.AIPROXY_API_KEY,
     AIPROXY_BASE_URL: process.env.AIPROXY_BASE_URL || GATEWAY_BASE_URLS.aiproxy,
   }
@@ -102,6 +131,9 @@ export async function getUserApiKeys(): Promise<{
           break
         case 'anthropic':
           apiKeys.ANTHROPIC_API_KEY = decryptedValue
+          break
+        case 'aigateway':
+          apiKeys.AI_GATEWAY_API_KEY = decryptedValue
           break
         case 'aiproxy':
           apiKeys.AIPROXY_API_KEY = decryptedValue
@@ -130,6 +162,7 @@ export async function getUserApiKey(provider: Provider): Promise<string | undefi
     gemini: process.env.GEMINI_API_KEY,
     cursor: process.env.CURSOR_API_KEY,
     anthropic: process.env.ANTHROPIC_API_KEY,
+    aigateway: process.env.AI_GATEWAY_API_KEY,
     aiproxy: process.env.AIPROXY_API_KEY,
   }
 

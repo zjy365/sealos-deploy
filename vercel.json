@@ -1,0 +1,8 @@
+{
+  "functions": {
+    "app/api/tasks/route.ts": {
+      "maxDuration": 300
+    }
+  },
+  "crons": []
+}
