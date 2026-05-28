@@ -1,5 +1,4 @@
 export interface DeployApiRequest {
-  kubeconfig: string
   githubToken: string
   repoUrl: string
   branch?: string

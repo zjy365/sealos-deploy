@@ -117,44 +117,6 @@ pnpm dlx shadcn@latest add <component-name>
 
 Existing components are in `components/ui/`. See [shadcn/ui docs](https://ui.shadcn.com/) for available components.
 
-### CRITICAL: Never Run Dev Servers
-
-**DO NOT run development servers (e.g., `npm run dev`, `pnpm dev`, `next dev`) as they will conflict with other running instances.**
-
-#### Why This Rule Exists:
-
-- Dev servers run indefinitely and block the terminal session
-- Multiple instances on the same port cause conflicts
-- The application may already be running in the user's environment
-- Long-running processes make the conversation hang for the user
-
-#### Commands to AVOID:
-
-```bash
-# DO NOT RUN THESE:
-npm run dev
-pnpm dev
-next dev
-npm start
-pnpm start
-yarn dev
-node --watch
-nodemon
-```
-
-#### What to Do Instead:
-
-1. **Type checking**: Use `pnpm type-check` to verify types
-2. **Linting**: Use `pnpm lint` to check code quality
-3. **Formatting**: Use `pnpm format` when editing TypeScript/TSX files
-4. **Running tests**: Use `pnpm test` if tests are available
-5. **Production build**: Do not run `pnpm build` by default. Only run it if the user explicitly asks for it or the task specifically requires a production build verification
-6. **If the user needs to test**: Let the user run the dev server themselves
-
-#### Exception:
-
-If the user explicitly asks you to start a dev server, politely explain why you cannot do this and suggest they run it themselves instead.
-
 ### Logging Best Practices
 
 1. **Use descriptive static messages**
