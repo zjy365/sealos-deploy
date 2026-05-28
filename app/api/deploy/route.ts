@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server'
-import { validateKubeconfig } from '@/lib/deploy-api/auth'
+import { resolveCodexGatewayFromApiKeys } from '@/lib/api-keys/user-keys'
 import { runDeployOrchestration } from '@/lib/deploy-api/orchestrator'
 import type { SendEventFn } from '@/lib/deploy-api/types'
 
@@ -19,15 +19,10 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const { kubeconfig, githubToken, repoUrl, branch } = body as {
-    kubeconfig?: string
+  const { githubToken, repoUrl, branch } = body as {
     githubToken?: string
     repoUrl?: string
     branch?: string
-  }
-
-  if (!kubeconfig || typeof kubeconfig !== 'string') {
-    return Response.json({ error: 'kubeconfig is required' }, { status: 400 })
   }
 
   if (!githubToken || typeof githubToken !== 'string') {
@@ -46,11 +41,9 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // Authenticate via kubeconfig before establishing SSE stream
-  const authResult = await validateKubeconfig(kubeconfig)
-
-  if (!authResult.ok) {
-    return Response.json({ error: 'Authentication failed', reason: authResult.reason }, { status: 401 })
+  const gatewayConfig = resolveCodexGatewayFromApiKeys()
+  if (!gatewayConfig) {
+    return Response.json({ error: 'AI gateway configuration is required' }, { status: 500 })
   }
 
   const encoder = new TextEncoder()
@@ -89,7 +82,7 @@ export async function POST(req: NextRequest) {
       githubToken,
       repoUrl: repoUrl.trim(),
       branch: resolvedBranch,
-      gatewayConfig: authResult.gatewayConfig,
+      gatewayConfig,
       signal: abortController.signal,
     },
     sendEvent,
