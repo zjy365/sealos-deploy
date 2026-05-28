@@ -19,7 +19,8 @@ import type { GatewayConfig } from '@/lib/api-keys/user-keys'
 import type { CodexGatewaySummaryEvent } from '@/lib/codex-gateway/types'
 import { buildDeployPrompt } from './prompt'
 import { extractDeployResult } from './result-parser'
-import { DeployError, type DeployErrorCode, type DeployPhase, type SendEventFn } from './types'
+import { DeployError, type DeployPhase, type SendEventFn } from './types'
+import { deployErrorEventFromUnknown } from './error-event'
 
 const DEPLOY_POLL_INTERVAL_MS = 3_000
 const DEPLOY_TIMEOUT_MS = 30 * 60 * 1_000 // 30 minutes
@@ -201,10 +202,7 @@ export async function runDeployOrchestration(input: DeployOrchestrationInput, se
   } catch (error) {
     console.error('Deploy orchestration error:', error)
 
-    const code: DeployErrorCode = error instanceof DeployError ? error.code : 'internal_error'
-    const phase: DeployPhase | undefined = error instanceof DeployError ? error.phase : currentPhase
-
-    sendEvent('error', { code, phase, message: 'Deployment failed' })
+    sendEvent('error', deployErrorEventFromUnknown(error, { currentPhase }))
   } finally {
     // Always clean up: session first, then Devbox
     // Both are awaited to ensure cleanup completes before the SSE stream closes

@@ -2,32 +2,23 @@ import 'server-only'
 
 import { execDevbox } from '@/lib/devbox/client'
 import { DeployError } from './types'
+import { buildFindWorkspaceCommand } from './workspace'
 
 export interface DeployResult {
   image: string
   yaml: string
 }
 
-const FIND_WORKSPACE_CMD = [
-  'home_dir="${HOME:-/root}"',
-  'if [ -d "$home_dir/workspace" ]; then',
-  '  workspace_dir="$home_dir/workspace"',
-  'elif [ -d /workspace ]; then',
-  '  workspace_dir="/workspace"',
-  'else',
-  '  workspace_dir="$home_dir"',
-  'fi',
-].join('\n')
-
 export async function extractDeployResult(runtimeName: string): Promise<DeployResult> {
   const readOutputCmd = [
-    FIND_WORKSPACE_CMD,
+    buildFindWorkspaceCommand(),
     'cat "$workspace_dir/.sealos/deployment-output.json" 2>/dev/null || true',
   ].join('\n')
 
-  const readYamlCmd = [FIND_WORKSPACE_CMD, 'cat "$workspace_dir/.sealos/crossplane/ap.yaml" 2>/dev/null || true'].join(
-    '\n',
-  )
+  const readYamlCmd = [
+    buildFindWorkspaceCommand(),
+    'cat "$workspace_dir/.sealos/crossplane/ap.yaml" 2>/dev/null || true',
+  ].join('\n')
 
   const [outputExec, yamlExec] = await Promise.all([
     execDevbox(runtimeName, { command: ['sh', '-lc', readOutputCmd], timeoutSeconds: 30 }),
